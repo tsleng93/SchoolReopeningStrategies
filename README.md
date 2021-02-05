@@ -15,7 +15,7 @@ The functions 'model_outputs.m' and 'moremodel_outputs.m' extract key quantities
 
 
 # Regenerating results
-To generate the underlying data and plots for Figures 1 and 2, users should run the code 'main_plots.m'. Figures 1 (b), (c), and (d) require [Violin plots for Matlab] (https://github.com/bastibe/Violinplot-Matlab#:~:text=A%20violin%20plot%20is%20an,overlays%20the%20data%20points%20itself.&text=violinplot%20is%20meant%20as%20a,boxplot%20(excluding%20named%20arguments).). Figure 1 (e) requires [MikeCF (2021),  Break Y Axis] (https://www.mathworks.com/matlabcentral/fileexchange/45760-break-y-axis)
+To generate the underlying data and plots for Figures 1 and 2, users should run the code 'main_plots.m'. Figures 1 (b), (c), and (d) require [Violin plots for Matlab](https://github.com/bastibe/Violinplot-Matlab#:~:text=A%20violin%20plot%20is%20an,overlays%20the%20data%20points%20itself.&text=violinplot%20is%20meant%20as%20a,boxplot%20(excluding%20named%20arguments).). Figure 1 (e) requires [MikeCF (2021),  Break Y Axis](https://www.mathworks.com/matlabcentral/fileexchange/45760-break-y-axis)
 
 To generate the plots for the PCR and LFT test probability profiles (Supplementary Figure S1), users should run the code 'test_probability_profiles.m'. Test probability profiles for symptomatic individuals were obtained directly from [Hellewell et al. (2020)](https://cmmid.github.io/topics/covid19/pcr-positivity-over-time.html). Test probability profiles for asymptomatic individuals were obtained by assuming that profiles were equal to that of symptomatic individuals until the peak of infection, but then decay more rapidly. 
 
