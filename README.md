@@ -9,6 +9,7 @@ Underlying code, functions and visualisations are written in matlab version 2019
 
 # Model functions
 The function 'school_model.m' is the main function of the model, simulating the spread of infection in a secondary school over the course of a half term.
+
 The functions 'model_outputs.m' and 'moremodel_outputs.m' extract key quantities from the 'history' output of the schools model, such as prevalence, total infected over a half term, absences, and testing volume. The specific outputs are described in comments within the .m files.
 
 
