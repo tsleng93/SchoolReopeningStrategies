@@ -21,4 +21,4 @@ To generate the plots for the PCR and LFT test probability profiles (Supplementa
 
 To generate the underlying data and plots for the sensitivity analyses (Supplementary Figures S2-S4), users should run the code 'sensitivity_analyses.m'
 
-To generate the underlying data and plots for Supplementary Figuure 5, users should run the code 'suppfigure_K.m'.
+To generate the underlying data and plots for Supplementary Figure 5, users should run the code 'suppfigure_K.m'.
