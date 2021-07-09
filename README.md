@@ -1,4 +1,10 @@
+
+
+
 # SchoolReopeningStrategies
+
+
+**Coming soon** The underlying model and model fitting code used in the paper "Quantifying within-school SARS-CoV-2 transmission and the impact of lateral flow testing in secondary schools in England" by Trystan Leng*, Edward M. Hill, Alex Holmes, Emma Southall, Robin N. Thompson, Michael J. Tildesle, Matt J. Keeling, and Louise Dyson will be uploaded to this repository **soon**.
 
 This repository contains the underlying code and functions used in the paper "Assessing the impact of secondary school reopening strategies on within-school Covid-19 transmission and absences: a modelling study", by Trystan Leng*, Edward M. Hill, Robin N. Thompson, Michael J. Tildesley, Matt J. Keeling and Louise Dyson.
 
