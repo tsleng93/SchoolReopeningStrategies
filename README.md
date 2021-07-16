@@ -44,7 +44,7 @@ The main analyses in the paper require data not publicly available. However, we 
 
 Comparable analyses can be obtained by running the script 'LTLAComparisonMain'. Different school control strategies can be obtained by adjusting the 'Strategy' structure. Comparable figures to figures 2 and 3 (omitting data) can be obtained through running the script 'ExampleFigures.m'.
 
-## Model function
+## Model functions
 The function 'interactingyeargroupsextended.m' is the main function of the model, simulating the spread of infection in a secondary school from 31st August 2020 until the 23rd May 2021.
 
 The function 'interactingyeargroupsquicker.m' is a quicker version of the above model, owing to a  quicker within-model infection process, but does not track within-school R explcitly. This function is used for the model fitting.
