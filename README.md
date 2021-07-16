@@ -57,5 +57,6 @@ The function 'LTLAComparisonMain.m' is the function used to obtain the main mode
 
 The function 'FittingModelFunction.m' is a function containing the fitting procedure used in the model.
 
+The functions 'Modeloutputscondensed.m' extracts key quantities from the 'history' output of the schools model. The specific outputs are described in comments within the .m files.
 
 
