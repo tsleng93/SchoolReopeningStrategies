@@ -12,9 +12,9 @@ Corresponding author: Trystan Leng, email: trystan.leng@warwick.ac.uk
 Underlying code, functions and visualisations are written in matlab version 2019b.
 
 
-Also contained in this The underlying model and model fitting code used in the paper "Quantifying within-school SARS-CoV-2 transmission and the impact of lateral flow testing in secondary schools in England" by Trystan Leng*, Edward M. Hill, Alex Holmes, Emma Southall, Robin N. Thompson, Michael J. Tildesley, Matt J. Keeling, and Louise Dyson is contained in the subfolder 'FittedModel'
+Also contained in this The underlying model and model fitting code used in the paper "Quantifying within-school SARS-CoV-2 transmission and the impact of lateral flow testing in secondary schools in England" by Trystan Leng*, Edward M. Hill, Alex Holmes, Emma Southall, Robin N. Thompson, Michael J. Tildesley, Matt J. Keeling, and Louise Dyson is contained in the subfolder 'FittedModel'. The read me file for this is included below, in the section 'ReadMe - Quantifying within-school SARS-CoV-2 transmission'.
 
-# Assessing the impact of secondary school reopening strategies 
+# ReadMe -  Assessing the impact of secondary school reopening strategies 
 
 
 ## Model functions
@@ -31,9 +31,11 @@ To generate the underlying data and plots for the sensitivity analyses (Suppleme
 
 To generate the underlying data and plots for Supplementary Figure 5, users should run the code 'suppfigure_K.m'.
 
-# Quantifying within-school SARS-CoV transmission 
+# ReadMe - Quantifying within-school SARS-CoV transmission 
 
-Relevant scripts and functions are contained in the subfolder 'FittedModel'. We extend the model described in 'interactingyeargroups.m' to incorporate greater aspects of realism.
+The model code is written in Matlab, and has been tested on Matlab 2019a. No non-standard hardware is required to run the model code. 
+
+Relevant scripts and functions are contained in the subfolder 'FittedModel'. By downloading this subfolder, a user will be able to run the relevant model functions. This download should be completed in a few minutes.  We extend the model described in 'interactingyeargroups.m' to incorporate greater aspects of realism.
 
 The main analyses in the paper require data not publicly available. However, we provide comparable data in the file 'exampleworkspace.mat'. In particular:
 
@@ -42,7 +44,13 @@ The main analyses in the paper require data not publicly available. However, we 
 3) Smoothed community PCR positive testing rates for each LTLA are provided, obtained using the Matlab function 'smooth' with the setting 'rloess, rather than the raw data obtained from Pillar 2 data.
 4) We assume 36% uptake LFT uptake across all LTLAs, rather than obtaining uptake levels from Pillar 2 data that vary through time and by LTLA.
 
-Comparable analyses can be obtained by running the script 'LTLAComparisonMain'. Different school control strategies can be obtained by adjusting the 'Strategy' structure. Comparable figures to figures 2 and 3 (omitting data) can be obtained through running the script 'ExampleFigures.m'.
+
+
+Comparable analyses can be obtained by running the script 'LTLAComparisonMain'.  Comparable figures to figures 2 and 3 (omitting data) can be obtained through running the script 'ExampleFigures.m'.  This runs the baseline strategy of twice weekly mass testing and the isolation of close contacts. Different school control strategies can be obtained by adjusting the 'Strategy' structure:
+
+ - to run the 'isolating close contacts' strategy, set Strategy.masstesting = 0 , Strategy.isolation = 1, Strategy.SCT = 0
+ - to run the 'mass testing' strategy (i.e. twice weekly mass testing alone), set Strategy.masstesting = 2, Strategy.isolation = 0, Strategy.SCT = 0
+ - to run the 'mass testing + serial contact testing' strategy, set Strategy.masstesting = 2, Strategy.isolation = 0, Strategy.SCT = 1
 
 ## Model functions
 The function 'interactingyeargroupsextended.m' is the main function of the model, simulating the spread of infection in a secondary school from 31st August 2020 until the 23rd May 2021.
