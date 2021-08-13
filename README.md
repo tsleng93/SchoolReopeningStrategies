@@ -46,11 +46,13 @@ The main analyses in the paper require data not publicly available. However, we 
 
 
 
-Comparable analyses can be obtained by running the script 'LTLAComparisonMain'.  Comparable figures to figures 2 and 3 (omitting data) can be obtained through running the script 'ExampleFigures.m'.  This runs the baseline strategy of twice weekly mass testing and the isolation of close contacts. Different school control strategies can be obtained by adjusting the 'Strategy' structure:
+Comparable analyses can be obtained by running the script 'LTLAComparisonMain.m'.  Comparable figures to figures 2 and 3 (omitting data) can be obtained through running the script 'ExampleFigures.m'.  This runs the baseline strategy of twice weekly mass testing and the isolation of close contacts. Different school control strategies can be obtained by adjusting the 'Strategy' structure:
 
  - to run the 'isolating close contacts' strategy, set Strategy.masstesting = 0 , Strategy.isolation = 1, Strategy.SCT = 0
  - to run the 'mass testing' strategy (i.e. twice weekly mass testing alone), set Strategy.masstesting = 2, Strategy.isolation = 0, Strategy.SCT = 0
  - to run the 'mass testing + serial contact testing' strategy, set Strategy.masstesting = 2, Strategy.isolation = 0, Strategy.SCT = 1
+
+LTLAComparisonMain.m should take ~4 hours to run, using a parallel pool of 4 workers.
 
 ## Model functions
 The function 'interactingyeargroupsextended.m' is the main function of the model, simulating the spread of infection in a secondary school from 31st August 2020 until the 23rd May 2021.
