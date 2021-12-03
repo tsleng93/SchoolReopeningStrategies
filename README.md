@@ -33,7 +33,7 @@ To generate the underlying data and plots for Supplementary Figure 5, users shou
 
 # ReadMe - Quantifying within-school SARS-CoV-2 transmission 
 
-The model code is written in Matlab, and has been tested on Matlab 2019a. No non-standard hardware is required to run the model code. 
+The model code is written in Matlab, and has been tested on Matlab 2019a and Matlab 2021a. No non-standard hardware is required to run the model code. 
 
 Relevant scripts and functions are contained in the subfolder 'FittedModel'. By downloading this subfolder, a user will be able to run the relevant model functions. This download should be completed in a few minutes.  We extend the model described in 'interactingyeargroups.m' to incorporate greater aspects of realism.
 
@@ -52,7 +52,7 @@ Comparable analyses can be obtained by running the script 'LTLAComparisonMain.m'
  - to run the 'mass testing' strategy (i.e. twice weekly mass testing alone), set Strategy.masstesting = 2, Strategy.isolation = 0, Strategy.SCT = 0
  - to run the 'mass testing + serial contact testing' strategy, set Strategy.masstesting = 2, Strategy.isolation = 0, Strategy.SCT = 1
 
-LTLAComparisonMain.m should take ~4 hours to run, using a parallel pool of 4 workers.
+LTLAComparisonMain.m should take ~4 hours to run, using a parallel pool of 10 workers.
 
 ## Model functions
 The function 'interactingyeargroupsextended.m' is the main function of the model, simulating the spread of infection in a secondary school from 31st August 2020 until the 23rd May 2021.
@@ -61,7 +61,7 @@ The function 'interactingyeargroupsquicker.m' is a quicker version of the above 
 
 The functions 'Interactingyeargroups_infection.m' and 'Interactingyeargroups_externalinfection.m' are functions that used to simulate parts of the infection process in interacting year groups. These have been converted to .mex files to speed up model code. 
 
-The function 'SchoolPopulation.m' is a function creating the matrix structure of school contacts.
+The function 'SchoolPopulation.m' is a function creating the matrix structure of school contacts for the longer version of the code, while 'SchoolPopulationQuicker.m' is a function creating the matrix structure of school contacts for the quicker version of the code.
 
 The function 'LTLAComparisonMain.m' is the function used to obtain the main model results. 
 
