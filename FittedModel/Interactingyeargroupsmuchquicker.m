@@ -163,8 +163,7 @@ end
 
 
 %Authors: Trystan Leng and Edward M. Hill 
-%Last update 6/12/2021.
-
+%Last update 11/11/2021.
 %% ---- Parameters ----- 
 
 %Directly from input
@@ -793,45 +792,39 @@ if ~(any(Week ==  Infection.HolidayWeek) || (Week == 1 || day_of_week == 6 || da
         end
         
         %if anyone is actually infected
-        
-        
-         if sum(sum(Now.Infect > 0)) == 1
-             
-             %only one individual infected, so can do it this quicker way
-                  
-              yg_inf = sum(Now.Infect, 2);             
-              rs_inf = sum(yg_inf) - yg_inf;
 
-              %infection to each student
-              closecontact_infmat = Now.Infect*YearGroupMatrix;             
-              history.TotInfstudent = (closecontact_infmat+ alpha_withinyear*(yg_inf - closecontact_infmat) + alpha_betweenyears*rs_inf)/(NumCloseContacts + alpha_withinyear*(YearSize - NumCloseContacts - 1) + alpha_betweenyears*(YearGroup-1)*YearSize); %can add these because only one indiv is infected
+
+        %{
+        
+              yg_inf = sum(Now.Infect, 2);  %force of infection from year group           
+              rs_inf = sum(yg_inf) - yg_inf; %force of infection from rest of school to each year group
+
               
-        else            
-              %more than one individual infected
+              closecontact_infmat = Now.Infect*YearGroupMatrix; %infection to each student
+              
+              
+              %force of infection to each student (before accounting for if
+              %they are isolating)
+              history.TotInfstudentorig = (closecontact_infmat+ alpha_withinyear*(yg_inf - closecontact_infmat) + alpha_betweenyears*rs_inf)/(NumCloseContacts + alpha_withinyear*(YearSize - NumCloseContacts - 1) + alpha_betweenyears*(YearGroup-1)*YearSize);
+           %}
+        
                const = (NumCloseContacts + alpha_withinyear*(YearSize - NumCloseContacts - 1) + alpha_betweenyears*(YearGroup-1)*YearSize);
-                  
+               
+               
                for yr = 1:YearGroup
-                   
-                   if sum(Now.Infect(yr,:)) > 0 %if anyone in the year is infected
-                   
-                   tempnow = Now.Infect(yr,:)';
-                   tempa = YearGroupMatrix.*tempnow;
-                   tempb = (1-YearGroupMatrix).*tempnow;
-                   closecontact_infmat(yr,:) = prod(1 - (tempa/const)); %probability not infected by close contacts
-                   yg_infmat(yr,:) = prod(1 - (alpha_withinyear*tempb/const)); %probability not infected by rest of year
-                   
-                   else %if nobody in the year is infected
-                      closecontact_infmat(yr,:) = ones(1,YearSize);
-                      yg_infmat(yr,:) = ones(1,YearSize);
-                   end
+                   closecontact_infmat(yr,:) = prod(1 - (YearGroupMatrix.*Now.Infect(yr,:)')/const);
+                   yg_infmat(yr,:) = prod(1 - (alpha_withinyear*(1-YearGroupMatrix).*Now.Infect(yr,:)')/const);
                end
-
-               rs_inf = (1 - (prod(prod(1 - (alpha_betweenyears/const)*Now.Infect)))./prod(1 - (alpha_betweenyears/const)*Now.Infect'))'; %probability infected by other years
-               rs_inf(isnan(rs_inf)) = 0; %set isnans to 0    
-               %infection to each student
-               history.TotInfstudent = 1 -(closecontact_infmat).*(yg_infmat).*(1-rs_inf); %product of the probability of not getting infected by the three routes
-
-         end        
+               
+               %closecontact_infmat = Now.Infect*YearGroupMatrix;
+               
+               
+               %yg_infmat = Now.Infect*(1-YearGroupMatrix);
+               rs_inf = (1 - (prod(prod(1 - (alpha_betweenyears/const)*Now.Infect)))./prod(1 - (alpha_betweenyears/const)*Now.Infect'))';
+               rs_inf(isnan(rs_inf)) = 0;
+               
+               history.TotInfstudent = 1 - (closecontact_infmat).*(yg_infmat).*(1-rs_inf);
+        
         
              %Set force of infection to isolating students to be 0 
              isolating = find(history.Isolation(:,:,day));                 
@@ -906,10 +899,26 @@ history.HolidayWeek = Infection.HolidayWeek;
 end
     
 function Now = Update2(Now, history, Prob_profiles, Symptomatic, Day,Ks)
-    Now.Infect = Ks.*(Prob_profiles.newvar(Day)*(Symptomatic.*Prob_profiles.Inf_symday(history.Infection(:,:,Day) +1) + (1-Symptomatic).*Prob_profiles.Inf_asymday(history.Infection(:,:,Day) +1)));  
+    %Symptomatics need to be transposed when 1 year group 
+    %{
+    Now.Infect = (Symptomatic'.*Probs.Inf_sym(history.Infection(:,:,Day) +1) + (1-Symptomatic)'.*Probs.Inf_asym(history.Infection(:,:,Day) +1))';
+    Now.PCR  =   (Symptomatic'.*Probs.PCR_sym(history.Infection(:,:,Day) +1) + (1-Symptomatic)'.*Probs.PCR_asym(history.Infection(:,:,Day) + 1))';
+    Now.lat  =   (Symptomatic'.*Probs.lat_sym(history.Infection(:,:,Day) +1) + (1-Symptomatic)'.*Probs.lat_asym(history.Infection(:,:,Day) + 1))';
+    %}
+    %But not with larger year groups? figure out
+    Now.Infect = Ks.*(Prob_profiles.newvar(Day)*(Symptomatic.*Prob_profiles.Inf_symday(history.Infection(:,:,Day) +1) + (1-Symptomatic).*Prob_profiles.Inf_asymday(history.Infection(:,:,Day) +1)));
+   % Now.Infect = (1-history.Isolation(:,:,Day)).*Now.Infect;
+   
+   
+  %  Now.PCR  =   (Symptomatic.*Prob_profiles.PCR_symday(history.Infection(:,:,Day) +1) + (1-Symptomatic).*Prob_profiles.PCR_asymday(history.Infection(:,:,Day) + 1));
+  %  Now.lat  =   (Symptomatic.*Prob_profiles.lat_symday(history.Infection(:,:,Day) +1) + (1-Symptomatic).*Prob_profiles.lat_asymday(history.Infection(:,:,Day) + 1));
+    
+    
 end
 
 
 function Now = Update4(Now,histInf, Prob_profiles, Symptomatic, Day, K, histIsol)
+
 Now.Infect = K*((1-histIsol).*(Prob_profiles.newvar(Day)*(Symptomatic.*Prob_profiles.Inf_symday(histInf +1) + (1-Symptomatic).*Prob_profiles.Inf_asymday(histInf +1))));
+
 end

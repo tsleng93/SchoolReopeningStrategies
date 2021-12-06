@@ -1,4 +1,4 @@
-function [history] = Interactingyeargroups(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, randnum, school_pop2)
+function [history] = Interactingyeargroupsextended(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, randnum, school_pop2)
 %This function simulates the spread of infection between pupils within a
 %secondary school formed of close contact groups in within year groups.
 
@@ -179,102 +179,7 @@ end
 %   Moremodeloutputs.m
 
 %Authors: Trystan Leng and Edward M. Hill 
-%Last update 11/11/2021.
-
-%{
-if nargin == 0 %To update
-    %random number   
-    randnum = 5;
-    rng(randnum);
-    
-    %School population
-    school_pop = SchoolPopulation(200, 5, 200, 0);
-    
-    
-    %Infection_parameters
-    %Infection.K = 3*rand+1; %secondary infections expected from symptomatic individual (without depletion of susceptibles)
-
-    
-    
-    Infection.Ext = 0.0013133; %probability of external infection to each non-individual on daya not isolating
-    Infection.Inf_0 = 0.02; %Initial population prevalence
-    Infection.Rec_0 = 0.2;  %Initial population immunity
-    Infection.K_asym = 0.4*rand + 0.3; % Relative infectiousness of asymptomatic individuals
-    Infection.Sym_proportion = 0.12 + 0.19*rand; %Proportion of school population who are symptomatic
-    Infection.alpha_withinyear = 0; %Interaction with other members of the year group (not close contacts)
-    Infection.alpha_betweenyears = 0; %Interaction between year groups
-    Infection.leak_infect = 0; %0 or 1, whether infection occurs on test days
-    
-    
-    Infection.Weeks = 6; %Number of weeks (including week before term)
-    
-    Infection.HolidayWeek = []; % Weeks of school holidays
-    
-    %Testing_parameters
-    Testing.sens_PCR = 1; % parameter deciding which column of the PCR sensitivity profile to read
-    %(1) - baseline sensitivity, (2) - low sensitivity, (3) - high sensitivity 
-    Testing.sens_lat = 1; %parameter deciding which column of the LFT sensitivity profile to read.
-    %(1) - baseline sensitivity, (2) - low sensitivity, (3) - high sensitivity 
-    Testing.spec_PCR = 0.997 + 0.003*rand; %specificity of PCR tests
-    Testing.spec_lat = 0.997 + 0.003*rand; %specificity of LFT tests
-    Testing.PCR_delay = 2; %delay on PCR tests
-    
-    %Strategy parameters
-    Strategy.isolation = 1; %(0) - not isolating, (1) - isolating close contacts, (2) - isolating year groups
-    Strategy.SCT = 0; %(0) - no serial contact testing, (1) - serial contact testing close contacts, (2) - serial contact testing year groups %%overrides isolation
-    Strategy.SCTuptake = 1; %Proportion of individuals agreed to participate in serial contact testing
-    Strategy.masstesting = 2; %(0) - no mass testing, (1) - weekly mass testing, (2) - twice weekly mass testing
-    Strategy.masstestinguptake = 1; %Proportion of individuals agreed to be mass tested
-    Strategy.initialtestdays = [1 4 8]; %initial testing days
-    Strategy.initialuptake = 0; %uptake to initial testing
-    
-    %Adherence parameters
-    Adherence.C_isolate = 0; % constant scaling the external force of infection on isolating individuals
-   % Adherence.probtakelatflow = 0.05*ones(1, Infection.Weeks*7); %probability of taking lat flow (0 - 1), larger integers could specify the inclusion of correlations into this
-   Adherence.probtakelatflow = [1,1,1,1,1,1,1,0.0160368054295554,0.242141672776696,0.221278350684790,0.173843395227479,0.230068323684321,0.222998568751878,0.00797233690200095,0.0482577242359299,0.242081620407951,0.189148536967751,0.192661343905288,0.175212024639949,0.0847528832194434,0.0148324218119442,0.272193520554720,0.125323134353830,0.0576525837018385,0.223569836157121,0.115413466974662,0.0363096125621343,0.0146869103030617,0.282932629197924,0.0183326536808124,0.0252409857929954,0.134351263755906,0.0681450670187002,0.0251627124063831,0.0164964370211048,0.0984050450148963,0.0698763203501310,0.0290835674905219,0.0752266271176480,0.0752266271176480,0.0752266271176480,0.0752266271176480];
-   
-   
-    Adherence.serialnonadherence = 0; %proportion of individuals who agree to be tested but never actually take home tests
-    
-    
-    Adherence.takenproperly = 1; %proportion of LFTs that are not taken properly
-    
-    
-    
-   % Adherence.isolatingproperly = [0,0,0,0,0,0,0,0.867924528301887,0.844243792325056,0.802469135802469,0.750000000000000,0.701863354037267,0,0,0.601503759398496,0.577519379844961,0.552123552123552,0.496078431372549,0.442386831275720,0,0,0.393762183235867,0.378947368421053,0.393442622950820,0.354838709677419,0.356250000000000,0,0];
-    
-    %Probability Profiles
-    PCR_test_sym = readtable('PCR_Curve_summary.csv');
-    PCR_test_sym = table2array(PCR_test_sym(:, 2:4));
-    PCR_test_asym = csvread('PCR_Curve_asym.csv');
-    lat_test_sym = readtable('lat_Curve_summary.csv');
-    lat_test_sym = table2array(lat_test_sym(:, 2:4));
-    lat_test_asym = csvread('lat_Curve_asym.csv');
-    
-    Prob_profiles.PCRsym = PCR_test_sym;
-    Prob_profiles.PCRasym = PCR_test_asym;
-    Prob_profiles.latsym = lat_test_sym;
-    Prob_profiles.latasym = lat_test_asym;
-        
-    Infectivity_since_infection = [0.0063 0.0563 0.1320 0.1798 0.1817 0.1521 0.1117 0.0746 0.0464 0.0272 0.0152 0.0082 0.0043 0.0022 0.0011 0.0005 0.0002 0.0001 0.0001 0.0000];
-    Infectivity_since_infection = Infectivity_since_infection'/sum(Infectivity_since_infection);
-    Infectivity_since_infection(15) = sum(Infectivity_since_infection(15:end)); Infectivity_since_infection = Infectivity_since_infection(1:15);
-    Prob_profiles.Infectivity = Infectivity_since_infection;
-    
-    Symptom_onset =  [0.0055 0.0534 0.1307 0.1814 0.1847 0.1545 0.1129 0.0747 0.0458 0.0265 0.0146 0.0077 0.0039 0.0020 0.0010 0.0005 0.0002 0.0001 0 0];
-    Symptom_onset = Symptom_onset/sum(Symptom_onset);
-    Symptom_onset(15) = sum(Symptom_onset(15:end)); Symptom_onset = Symptom_onset(1:15);
-    Prob_profiles.Symptom_onset = Symptom_onset;
-    
-    
-    %time-varying community infection
-    Infection.commext = ones(1,Infection.Weeks*7);
-    
-    %effect of new variant
-    Prob_profiles.newvar = ones(1,Infection.Weeks*7 +1);
-    
-end
-%}
+%Last update 6/12/2021.
 
 %% ---- Parameters ----- 
 
