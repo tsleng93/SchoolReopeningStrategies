@@ -1,8 +1,9 @@
 function Fittingmodelfunction
 
-%ABC method used for fitting the vection
+%ABC-SMC method used for fitting the vection
 
-%Initialise
+
+%initialise
 Pillar_data_weeks = [];
 Pillar_data_hist_2020 = [];
 Pillar_data_5_weeks = [];
@@ -13,9 +14,7 @@ Testing =  [];
 
 %load('Dataforfitting.mat'); %%Commented out because of data availability
 
-
-
-%load relevant testing and infection profiles
+%% ---- load relevant testing and infection profiles
 PCR_test_sym = readtable('PCR_Curve_summary.csv');
 PCR_test_sym = table2array(PCR_test_sym(:, 2:4));
 PCR_test_asym = csvread('PCR_Curve_asym.csv');
@@ -38,201 +37,226 @@ Prob_profiles.latasym = lat_test_asym;
 Prob_profiles.Infectivity = Infectivity_since_infection;
 Prob_profiles.Symptom_onset = Symptom_onset;
 
+%% ---- set initial parameters and data
+
+%min and max parameter values
+paramsmin = [0 0 0.5 1 0 0 0 0 1 1 ];
+paramsmax = [4 4 3 3 1 1 1 1  2 4];
+
+N = 200; %number of particles
+LLprevgens = []; %log likelihoods from previous generations
+wprevgens = []; %weightings from previous generations
+paramsandLLkeep = []; %params, LLs, and weightings from previous generations
+params = zeros(N,10); %parameters (will be filled in in for loop)
+LLs = Inf*ones(N,1); %Log likelihoods (start all as Inf)
+Numgens = 20;
+timespergen = zeros(1,Numgens+1); %number of times loop is repeated each generation
+iterspergen = zeros(1,Numgens+1); %number of parameter sets tried each generation
+
+esnow = eees; %subset of schools to consider (100 to begin with)
+closecontactsizesnow = combinedschools(esnow,4); %close contact sizes
+yeargroupsizesnow = combinedschools(esnow,3); %year group sizes
+numyeargroupsnow = combinedschools(esnow,2); %number of year groups
+communityprevnow = communityprevforschool(esnow,:); %community testing rates for each school
+numtestingposnow = numtestingposforschool(esnow,:); %number of 10-19 year olds testing positive in school's LTLA
+numtestingnegnow = numtestingnegforschool(esnow,:); %number of 10-19 year olds testing positive in school's LTLA
+numpopLTLAnow = numpopLTLA(esnow); %number of 10-19 year olds in each school's LTLA
+schoolLTLAnow = schoolLTLA(esnow); %the LTLA of each school
+Urbannow = UrbanRuralType2(esnow); %whether school is rural or urban
+closecontactsnewtermnow = combinedschools(esnow,8); %close contact sizes after new term
 
 
+Lmax = 0; %irrelevant when 100 schools - set to 0 for now
+%model Log Likelihood function
+LLfun2 = @(infparams,data_t,data_hist, data_t2, data_hist2)LLfunLTLAwithEaster(infparams, data_t, data_hist, Prob_profiles, Testing, Adherence, Strategy, closecontactsizesnow, yeargroupsizesnow, numyeargroupsnow, LTLAEasterHoliday, communityprevnow, numtestingposnow, numtestingnegnow, numpopLTLAnow, data_t2, data_hist2, schoolLTLAnow, Sigmoidfit, initsLTLA, Urbannow, closecontactsnewtermnow, Lmax);
 
 
-params = zeros(100,12);
-LLs = zeros(100,1);
-
-
-
-
-%bounds for parameter values
-paramsmin = [1 1 1 1 0 0 0 0 0 1 0.999 1 ];
-paramsmax = [2 4 2 3 1 1 1 1 1.5 2 1 4];
-
-%Set function
-numschools = 100;
-LLfun2 = @(infparams,data_t,data_hist, data_t2, data_hist2)LLfunLTLAwithEaster(infparams, data_t, data_hist, Prob_profiles, Testing, Adherence, Strategy, combinedschools(:,4), combinedschools(:,3), combinedschools(:,2), LTLAEasterHoliday, communityprevforschool, numtestingposforschool, numtestingnegforschool, numpopLTLA, data_t2, data_hist2, schoolLTLA, Sigmoidfit, initsLTLA, UrbanRuralType2, combinedschools(:,8), schoolregion, numschools);
-
-
-%Initial runs
-LLprevgens = [];
-paramsandLLkeep = [];
+%% ----- Initial run -----
 tic
-parfor i = 1:100
-    i
-    
-    %Initial search - force model to find finite values
-    LLs(i) = Inf;
-    
-    while isinf(LLs(i)) 
-        
-    p = zeros(1,12);    
-    
-    p(1) = 2*rand + 1; %K
-    p(2) = 3*rand + 1; %Ext
-    p(3) = rand + 1; %After first half-term
-    p(4) = 2*rand+1; %Impact of Holidays
-    p(5) = rand; %rural or urban
-    p(6) = rand; %Infectiousness of asymptomatics
-    p(7) = rand; %Proportion symptomatic
-    p(8) = rand; %sigma parameter lognormal Ext
-    p(9) = rand; %sigma parameter lognormal K
-    p(10) = 1 + 1*rand; %new variant impact
-    p(11) = 0.999 + 0.001*rand; %LFT specificity
-    p(12) = 3*rand +1; %LFT underreporting
-    
-    params(i,:) = p;
+while any(isinf(LLs))   
+  
+   timespergen(1) = timespergen(1)+1; 
+   iterspergen(1) = iterspergen(1) + sum(isinf(LLs));  
+   timespergentemp = timespergen(1)
+   
+   rng(N^3 + timespergentemp*(N));   
 
-    
-   % p = params(i,:);
-   
-   
-   
-    if any(p < paramsmin) || any(p > paramsmax)
-        LLs(i) = Inf; %%Infinite log-likelihood if out of bounds
-    else        
+    newparams = (paramsmax - paramsmin).*rand(N,10) + paramsmin; %set new parameter
+    parfor i = 1:N   
 
-    LLs(i) = LLfun2(p, Pillar_data_weeks, Pillar_data_hist_2020, Pillar_data_5_weeks, Pillar_data_hist_2021); %record log likelihood   
+        p = newparams(i,:);
+
+        if isinf(LLs(i)) % only enter into loop if LLs(i) is infinite
+
+            rng(N^3 + timespergentemp*(N) + (i-1));    
+
+            if (any(p < paramsmin) || any(p > paramsmax)) 
+                LL = Inf; %out of prior range
+            else        
+                LL = LLfun2(p, Pillar_data_weeks, Pillar_data_hist_2020, Pillar_data_5_weeks, Pillar_data_hist_2021);
+            end
+
+            LLs(i) = LL; %update Log likelihood
+            weighting(i) = 1; %set weighting as 1 for initial runs
+            params(i,:) = p; %update parameters
+        end
+
+
     end
-    
-    
-    end
+
 end
 toc
-median(LLs(~isinf(LLs))) %median finite LLs from initial runs
 
+ %% --- Main model fitting loop -----
 
-
-%Middle runs - with 100 sampled schools
-paramsandLL = [];
- for j = 1:9
-     
-
-     
-     LLfun2 = @(infparams,data_t,data_hist, data_t2, data_hist2)LLfunLTLAwithEaster(infparams, data_t, data_hist, Prob_profiles, Testing, Adherence, Strategy, combinedschools(:,4), combinedschools(:,3), combinedschools(:,2), LTLAEasterHoliday, communityprevforschool, numtestingposforschool, numtestingnegforschool, numpopLTLA, data_t2, data_hist2, schoolLTLA, Sigmoidfit, initsLTLA, UrbanRuralType2, combinedschools(:,8), schoolregion, numschools);
-
-    LLprevgens = [LLprevgens, LLs];    
-    paramsandLLkeep = [paramsandLLkeep; paramsandLL];    
-    paramsandLL = [params, LLs];
-    paramsandLL = sortrows(paramsandLL, size(params, 2)+1);
-    
-    
-    %Keep top 20%    
-    params = zeros(100,size(params,2));
-    params(1:20,:) = paramsandLL(1:20,1:size(params,2));    
-    LLs(1:20) = paramsandLL(1:20, size(params,2)+1);
-    
-   
-    %Sample rest from covariance    
-    Covs = cov(paramsandLL(1:20,1:size(params,2)));
-   params(21:end,:) =  mvnrnd(mean(paramsandLL(1:20,1:size(params,2))),2*Covs,80);   
-   meanp = mean(paramsandLL(1:20,1:size(params,2)));
-   
-       %parpool(4);
-       tic
-      parfor i = 1:100 
-
-          p = params(i,:);
-
-            while any(p < paramsmin) || any(p > paramsmax)
-               %choose new parameters if out of bounds
-               params(i,:) = mvnrnd(meanp,2*Covs,1);
-               p = params(i,:);                         
-            end       
-
-          LLs(i) = LLfun2(p, Pillar_data_weeks, Pillar_data_hist_2020, Pillar_data_5_weeks, Pillar_data_hist_2021);
-
-      end
-       
-      toc
-      median(LLs(~isinf(LLs)))
-
- end
- %}
-
- save('JulXfit');
-
-
-%Runs on final size
-minvalue = 0;
-cutoff = 0.05;
-threshold  = 1;
-medianLL = median(LLs);
-
-LLtemp = sort(LLs);
-
-LLthresh = (LLtemp(20));
-
-%longer runs - with 1000 sampled schools
-for j = 1:20
-    
-    
-    numschools = 1000;
-    
-   LLprevgens = [LLprevgens, LLs(1:100)];
-    
-   paramsandLLkeep = [paramsandLLkeep; paramsandLL];
-    
-    paramsandLL = [params, LLs];
-    paramsandLL = sortrows(paramsandLL, size(params, 2)+1);
-    
-    %Keep top 20%    
-    params = zeros(100,size(params,2));
-    params(1:20,:) = paramsandLL(1:20,1:size(params,2));        
-    LLs(1:20) = paramsandLL(1:20, size(params,2)+1);
-    
-    %Sample rest from covariance
-    Covs = cov(paramsandLL(1:20,1:size(params,2)));   
-    params(21:end,:) =  mvnrnd(mean(paramsandLL(1:20,1:size(params,2))),2*Covs,80);
-    meanp = mean(paramsandLL(1:20,1:size(params,2)));    
-    
-       LLfun2 = @(infparams,data_t,data_hist, data_t2, data_hist2)LLfunLTLAwithEaster(infparams, data_t, data_hist, Prob_profiles, Testing, Adherence, Strategy, combinedschools(:,4), combinedschools(:,3), combinedschools(:,2), LTLAEasterHoliday, communityprevforschool, numtestingposforschool, numtestingnegforschool, numpopLTLA, data_t2, data_hist2, schoolLTLA, Sigmoidfit, initsLTLA, UrbanRuralType2, combinedschools(:,8), schoolregion, numschools);
-
-
-        
-        tic
-        parfor i = 1:100 
-
-          p = params(i,:);
-
-            while any(p < paramsmin) || any(p > paramsmax)
-               params(i,:) = mvnrnd(meanp,2*Covs,1);
-               p = params(i,:);                         
-            end       
-
-          LLs(i) = LLfun2(p, Pillar_data_weeks, Pillar_data_hist_2020, Pillar_data_5_weeks, Pillar_data_hist_2021);
-
-        end
-        toc    
-end
-
-
-save('JulXfit');
+ B = 1; %number of runs for each parameter set
+ KernelConst = 0.68; %perturbation kernel constant
+ paramsandLL = []; %combined parameters, LLs, and weighting
 
  
+  for j = 1:Numgens
+    j 
+    
+    tic
+         
+     sum(LLs > eps) %number of parameter sets above threshold - will be 0        
+     if sum(LLs > eps) == 0
+         
+        eps = quantile(LLs, 0.5); %threshold for each generation          
+        epskeep(j) = eps; %store the threshold of each generation
+
+        LLprevgens = [LLprevgens, LLs]; %store log likelihoods from preveious generations      
+        paramsandLLkeep = [paramsandLLkeep; paramsandLL];  %store params, LLs, and weightings  
+        paramsandLL = [params, LLs, weighting'/sum(weighting)]; %update params and LLs
+    
+        w = weighting'/sum(weighting); %normalise weightings
+        wprevgens = [wprevgens, w']; %store weightings
+        ESS = sum(1/(w.^2)); %calculate effective sample size
+        ESSkeep(j) = ESS; %store effective sample sizes
+        X = paramsandLL(:, 1:size(params,2)); %X - previous generations accepted params, to be used in parfor loop
+        mu = sum(w.*X) / sum(w); % row containing weighted mean of each column
+        Kernel = KernelConst*((w/sum(w)).*(X-mu))'*(X - mu)/(1 - sum((w/sum(w)).^2)); %Perturbation Kernel
+        LLs = Inf*ones(N,1); %Set LLs to be -Infinity for now 
+        
+
+     end
+         
+    if j > 10
+       %sample of 600 schools
+       esnow = eees600;
+       Lmax = epskeep(11); %epsilon value after 10 generations at smaller sample
+    else
+       %sample of 100 schools
+       esnow = eees;
+       Lmax = 0; %not used 
+    end
+        
+    closecontactsizesnow = combinedschools(esnow,4); %close contact sizes
+    yeargroupsizesnow = combinedschools(esnow,3); %year group sizes
+    numyeargroupsnow = combinedschools(esnow,2); %number of year groups
+    communityprevnow = communityprevforschool(esnow,:); %community testing rates for each school
+    numtestingposnow = numtestingposforschool(esnow,:); %number of 10-19 year olds testing positive in school's LTLA
+    numtestingnegnow = numtestingnegforschool(esnow,:); %number of 10-19 year olds testing positive in school's LTLA
+    numpopLTLAnow = numpopLTLA(esnow); %number of 10-19 year olds in each school's LTLA
+    schoolLTLAnow = schoolLTLA(esnow); %the LTLA of each school
+    Urbannow = UrbanRuralType2(esnow); %whether school is rural or urban
+    closecontactsnewtermnow = combinedschools(esnow,8); %close contact sizes after new term
+
+    %model Log Likelihood function
+    LLfun2 = @(infparams,data_t,data_hist, data_t2, data_hist2)LLfunLTLAwithEaster(infparams, data_t, data_hist, Prob_profiles, Testing, Adherence, Strategy, closecontactsizesnow, yeargroupsizesnow, numyeargroupsnow, LTLAEasterHoliday, communityprevnow, numtestingposnow, numtestingnegnow, numpopLTLAnow, data_t2, data_hist2, schoolLTLAnow, Sigmoidfit, initsLTLA, Urbannow, closecontactsnewtermnow, Lmax);
+        
+     eps 
+          
+    while(any(LLs > eps)) %while any Log-likelihoods remain above threshold do run
+
+        rng((j+1)*N^3 + timespergentemp*(N))
+
+        sum(LLs > eps) %number of parameter sets above threshold
 
 
+        paramchoices = randsample(1:N, N, true, w); %choose parameters to perturb
+
+        for k = 1:N            
+            newparams(k,:) =  mvnrnd(X(paramchoices(k), :), Kernel, 1); %geenrate new parameters
+        end
+
+        iterspergen(j+1) = iterspergen(j+1) + sum(isinf(LLs));  
+        timespergen(j+1) = timespergen(j+1)+1;
+        timespergentemp = timespergen(j+1); 
+
+        if mod(timespergentemp, 20) == 0
+            delete(gcp('nocreate')); %close parpool to reduce memory use
+        end
+
+        parfor k = 1:N
+
+            if LLs(k) > eps
+
+                Successes  = 0;  %number of runs below threshold - set to 0 initially             
+                params(k,:) = newparams(k,:);               
+
+                if (any(params(k,:) < paramsmin) || any(params(k,:) > paramsmax))
+                    %out of prior range
+                    Successes = 0;
+                    LLs(k) = Inf;
+                else
+
+                    rng((j+1)*N^3 + timespergentemp*(N) + (k-1)); 
+
+                    weighting(k) =  1/sum((w/sum(w)).*mvnpdf(params(k,:), X, Kernel)); %calculate weighting
+                    tempLL = zeros(1,B); %log likelihoods for each run
+
+                    for jj = 1:B
+                        
+                        tempLL(jj) = LLfun2(params(k,:), Pillar_data_weeks, Pillar_data_hist_2020, Pillar_data_5_weeks, Pillar_data_hist_2021);
+
+                        if tempLL(jj) < eps
+                            Successes = Successes+1;
+                        end
+
+                    end
+
+                    LLs(k) = min(tempLL); %set Log likelihood as LL from best run
+                    weighting(k) = Successes*weighting(k)/B; %set weighting according to number of successes
+
+                end
+            end
+
+        end
+
+    end
+
+      
+    save('Modelfittingworkspace');   
+    delete(gcp('nocreate'));
+  
+ toc
+  end
+ 
 end
 
 %Likelihood function for model fitting
- function [LL, tests_model_t, tests_model_t2, tests_model_hist, tests_absences_t, model_poslft, model_posboth, model_numlft, model_prev, model_inc, tests_model_hist1, tests_model_hist2]  = LLfunLTLAwithEaster(infparams, data_t, data_hist, Prob_profiles, Testing, Adherence, Strategy, closecontactsizes, yeargroupsizes, numyeargroups, LTLAEasterHoliday, communityprevforschool, numtestingposforschool, numtestingnegforschool, numpopLTLA, data_t2, data_hist2, schoolLTLA, Sigmoidfit, initsLTLA, urbanorrural, closecontactsizesnewterm, schoolregion, numschools)
-   
-    %Infection parameters (that don't depend on randomness or LTLA)
-    Infection.Weeks = length(data_t)+1; %Number of weeks (including week before term    
-    %Infection.alpha_betweenyears = 0.1;%Interaction between year groups
-    Infection.alpha_betweenyears = 0.01;
-    Infection.alpha_withinyear = 0.1;
+ function [LL, LL_t, LL_t2, LL_hist1, LL_hist2]  = LLfunLTLAwithEaster(inputparams, data_t, data_hist, Prob_profiles, Testing, Adherence, Strategy, closecontactsizes, yeargroupsizes, numyeargroups, LTLAEasterHoliday, communityprevforschool, numtestingposforschool, numtestingnegforschool, numpopLTLA, data_t2, data_hist2, schoolLTLA, Sigmoidfit, initsLTLA, urbanorrural, closecontactsizesnewterm, Lmax)
 
+
+ %% adjust parameters to be in previous order 
+ infparams(1:7) = inputparams(1:7);
+ infparams(8) = 0;
+ infparams(9) = inputparams(8);
+ infparams(10) = inputparams(9);
+ infparams(11) = 0.9997;
+ infparams(12) = inputparams(10);
+    
+    %% Infection params (that don't depend on randomness or LTLA)
+    Infection.Weeks = length(data_t)+1; %Number of weeks (including week before term    
+    Infection.alpha_betweenyears = 0.01;
     Infection.leak_infect = 0; %0 or 1, whether infection occurs on test days    
     Infection.Rec_0 = 0.0625;
     Infection.Sym_proportion = infparams(7);         
     Infection.K_asym = infparams(6);
-
-    
-    %Testing_parameters 
+    Infection.alpha_withinyear = 1;
+   
+    %% Testing_parameters 
     Testing.sens_PCR = 1; % parameter deciding which column of the PCR sensitivity profile to read
     %(1) - baseline sensitivity, (2) - low sensitivity, (3) - high sensitivity 
     Testing.sens_lat = 1; %parameter deciding which column of the LFT sensitivity profile to read.
@@ -241,109 +265,78 @@ end
     Testing.spec_lat = infparams(11); %specificity of LFT tests
     Testing.PCR_delay = 2; %delay on PCR tests
     
-    %Adherence parameters
+    %% Adherence parameters
     Adherence.C_isolate = 0; % constant scaling the external force of infection on isolating individuals
     Adherence.serialnonadherence = 0; %proportion of individuals who agree to be tested but never actually take home tests
     Adherence.takenproperly = 1;
     Adherence.isolatingproperly = zeros(1,500);
 
-    
-    
-    %Strategy params (set as isolation for baselines
+      
+    %% Strategy params (set as isolation for baselines
     Strategy.isolation = 1; %(0) - not isolating, (1) - isolating close contacts, (2) - isolating year groups
     Strategy.SCT = 0; %(0) - no serial contact testing, (1) - serial contact testing close contacts, (2) - serial contact testing year groups %%overrides isolation
-    Strategy.SCTuptake = 0; %Proportion of individuals agreed to participate in serial contact testing
     Strategy.masstesting = 2; %(0) - no mass testing, (1) - weekly mass testing, (2) - twice weekly mass testing
-    Strategy.masstestinguptake = 1; %Proportion of individuals agreed to be mass tested
     Strategy.initialtestdays = []; %initial testing days
-    Strategy.initialuptake = 1; %uptake to initial testing
-        
 
-    p_rewire = 0; %rewiring of close contacts (always has been 0)
-    
-    
-    
-    %relative frequency of S-gene negatives for school
+    %new variant in each school's LTLA
+    communitySgeneforschool = zeros(length(schoolLTLA), length(237:(238+ 7*Infection.Weeks)));
     for i = 1:length(schoolLTLA)
         communitySgeneforschool(i,:) = 1*(1-Sigmoidfit( 237:(238+ 7*Infection.Weeks), schoolLTLA(i))) + infparams(10)*Sigmoidfit(237:(238+7*Infection.Weeks), schoolLTLA(i));  
     end
     
-    
-  
-  %choose schools
-  eees = randsample(length(schoolLTLA), numschools);
 
-
+    %% initialise output storage
+    tests_t = zeros(length(schoolLTLA), 266);
+    poslft_t = zeros(length(schoolLTLA), 266);
+    size_school = zeros(length(schoolLTLA),1);
+    Peak_covid_absences = zeros(length(schoolLTLA),1);
+    Peak_covid_absences1 = Peak_covid_absences;
+    Peak_covid_absences2 = Peak_covid_absences;
 
 
               
-        for i = 1:numschools
-                      
-                 eee = eees(i);
-              
+    %% do first 100
+        for i = 1:100
             
-               %Set infection parameters 
-               Infection.K = lognrnd(log(infparams(1)) - (infparams(9)^2/2), infparams(9));
-               Infection.K2 = infparams(3)*Infection.K;    
-               Infection.K3 = Infection.K2;
+           Infection.K = lognrnd((log(infparams(1)) - (infparams(9)^2/2)), infparams(9));
+           Infection.K2 = infparams(3)*Infection.K;    
+           Infection.K3 = Infection.K2;
+            eee = i;
 
-           
-          %assigning weeks of easter holiday dependent on LTLA
+           %Set Easter Holiday according to LTLA
           if LTLAEasterHoliday(schoolLTLA(eee)) == 1
              Infection.HolidayWeek = [10, 18:28, 32, 33];
           else
              Infection.HolidayWeek = [10, 18:28, 33, 34]; 
           end
 
+            Infection.Inf_0 = initsLTLA(schoolLTLA(eee));
 
-
-          Infection.Inf_0 = initsLTLA(schoolLTLA(eee)); %assigning initial infection dependent on LTLA
-
-           %external infection impacted by being urban or rural
+          %adjust Ext according to school's urban or rural status
           if urbanorrural(eee) == 2
             Infection.Ext = lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));
           else
-            Infection.Ext = infparams(5)*lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));      
+               Infection.Ext = infparams(5)*lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));      
           end
 
-          Infection.HolidayExt = infparams(4); %scaling of external infection during holidays/schoolclosures 
+          Infection.HolidayExt = infparams(4);  
 
-          Underreporting = ones(1,Infection.Weeks*7); %Underreporting
+          Underreporting = ones(1,Infection.Weeks*7);
           Underreporting(30*7:end) = infparams(12);
-          Adherence.probtakelatflow = ((Underreporting.*numtestingnegforschool(i,:)) + numtestingposforschool(i,:))/numpopLTLA(i); %LFT participation           
-
-
-           
-          Infection.commext = communityprevforschool(eee,:); %positive testing rates in the community          
-          Prob_profiles.newvar = communitySgeneforschool(eee,:); %proportion of new variant
-            
-         [school_pop, ~] = SchoolPopulation(yeargroupsizes(eee), numyeargroups(eee), closecontactsizes(eee), p_rewire);
-         [school_pop2, ~] = SchoolPopulation(yeargroupsizes(eee), numyeargroups(eee), closecontactsizesnewterm(eee), p_rewire);
-                    
-         history = interactingyeargroupsquicker(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, i, school_pop2);                   
-         [pos_PCRsday, peakcovabs, Absences, Prev_true, Num_LFTs, Pos_LFTs, Pos_LFTsandPCRs, Inc] = Modeloutputscondensed(history, Infection.Weeks);  
+          Adherence.probtakelatflow = ((Underreporting.*numtestingnegforschool(eee,:)) + numtestingposforschool(eee,:))/numpopLTLA(eee);                      
+          Infection.commext = communityprevforschool(eee,:);            
+          Prob_profiles.newvar = communitySgeneforschool(eee,:);           
+         school_pop = SchoolPopulationquicker(yeargroupsizes(eee), numyeargroups(eee), closecontactsizes(eee));
+         school_pop2 = SchoolPopulationquicker(yeargroupsizes(eee), numyeargroups(eee), closecontactsizesnewterm(eee));
          
-         
-        
-         
-           Prevs_t(i,:) = sum(Prev_true);
-           Incs_t(i,:) = sum(Inc);
-           tests_t(i,:) = pos_PCRsday;
-           size_school(i) = yeargroupsizes(eee)*numyeargroups(eee);            
-           Peak_covid_absences(i) = max(peakcovabs);
-                        
-            Rinfs1(i,:) = history.Rday(1,:);
-            Rinfs2(i,:) = history.Rday(2,:);
+         history = Interactingyeargroupsmuchquicker(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, school_pop2); %do model run                 
+         [pos_PCRsday, peakcovabs, Pos_LFTs] = Modeloutputssupercondensed(history, Infection.Weeks);  %obtain model outputs         
             
-            ExternalIncs(i,:) = squeeze(sum(sum((history.ext_or_int == 1))));
-            InternalIncs(i,:) = squeeze(sum(sum((history.ext_or_int == 2))));
-            
-            numlft_t(i,:) = Num_LFTs;
+            %store outputs for each school
+            tests_t(i,:) = pos_PCRsday;
+            size_school(i) = yeargroupsizes(eee)*numyeargroups(eee);            
+            Peak_covid_absences(i) = max(peakcovabs);
             poslft_t(i,:) = Pos_LFTs;
-           posboth_t(i,:) = Pos_LFTsandPCRs;
-            
-           Absences_t(i,:) = sum(Absences);
-           
             Peak_covid_absences1(i) = max(peakcovabs(8:119));
             Peak_covid_absences2(i) = max(peakcovabs(end-76:end));
 
@@ -351,32 +344,135 @@ end
         end
        
         
-        %model outputs
+        %model outputs for fitting
         
         tests_model_t = sum(tests_t)/sum(size_school);
         tests_model_hist = histcounts(Peak_covid_absences, [0:15 Inf]);
-        tests_model_hist = tests_model_hist/sum(tests_model_hist);
+        tests_model_hist = tests_model_hist/sum(tests_model_hist);        
+        tests_model_hist1 = histcounts(Peak_covid_absences1, [0:15 Inf]);
+        tests_model_hist2 = histcounts(Peak_covid_absences2, [0:8 Inf]);
+       
         
-        
-        
-       tests_model_hist1 = histcounts(Peak_covid_absences1, [0:15 Inf]);
-       tests_model_hist2 = histcounts(Peak_covid_absences2, [0:8 Inf]);
+       %adjust tests_model_hist1 and 2 if there are any 0 values
+       if any(~tests_model_hist1)
+            tests_model_hist1 = tests_model_hist1+1;
+       end
+       
+       if any(~tests_model_hist2)
+            tests_model_hist2 = tests_model_hist2+1;
+       end
+       
        tests_model_hist1 = tests_model_hist1/sum(tests_model_hist1);
        tests_model_hist2 = tests_model_hist2/sum(tests_model_hist2);
-                
-        tests_absences_t = sum(Absences_t)/sum(size_school);        
-        model_prev = sum(Prevs_t)/sum(size_school);
-        model_inc = sum(Incs_t)/sum(size_school);        
-        model_numlft = sum(numlft_t)/sum(size_school);
-        model_poslft = sum(poslft_t)/sum(size_school);        
-        model_posboth = sum(posboth_t)/sum(size_school);
-        %}
-        
+       model_poslft = sum(poslft_t)/sum(size_school);        
+ 
+         num_3 = 3896599; %for secondary schools
+
+         tests_model_t2 = model_poslft;
+         
+         tests_model_t_weeks = zeros(1,length(Infection.Weeks)-1);
+         tests_model_t_weeks2 = tests_model_t_weeks;
+
+         %testing data in weeks rather than days
+         for j = 1:(Infection.Weeks-1)
+             tests_model_t_weeks(j) = sum(tests_model_t(1 +(j-1)*7: 7 + (j-1)*7));
+             tests_model_t_weeks2(j) = sum(tests_model_t2(1 +(j-1)*7: 7 + (j-1)*7));
+
+         end
+
+ tests_model_t_weeks2 = tests_model_t_weeks2((end-10):end);
+ 
+ %Log likelihood at optimum
+ optllt = sum(data_t.*log(data_t/num_3) + (num_3 - data_t).*log(1 - (data_t/num_3)));
+ optllt2 = sum(data_t2.*log(data_t2/num_3) + (num_3 - data_t2).*log(1 - (data_t2/num_3))); 
+ optllhist = sum(data_hist.*log(data_hist/sum(data_hist)));
+ optllhist2 = sum(data_hist2.*log(data_hist2/sum(data_hist2)));
+ 
+ %Calculate Log likelihoods
+ LL_t = sum(data_t.*log(tests_model_t_weeks) + (num_3 - data_t).*log(1 - tests_model_t_weeks)) - optllt;
+ LL_t2 = (sum(data_t2.*log(tests_model_t_weeks2) + (num_3 - data_t2).*log(1 - tests_model_t_weeks2)) - optllt2);
+ LL_hist1 = (sum(data_hist.*log(tests_model_hist1)) - (optllhist));% 
+ LL_hist2 = (sum(data_hist2.*log(tests_model_hist2)) - (optllhist2));%
 
  
- num_3 = 3896599; %for secondary schools
+ %Calculate - total Log likelihood
+ LL = -1*(LL_t + LL_hist1 + LL_t2 + LL_hist2);
  
- tests_model_t2 = model_poslft;
+ 
+ if length(schoolLTLA) > 100  && LL < Lmax
+ %if under threshold do for the next 500 schools
+     
+        for i = 101:length(schoolLTLA)
+            
+               Infection.K = lognrnd((log(infparams(1)) - (infparams(9)^2/2)), infparams(9));
+               Infection.K2 = infparams(3)*Infection.K;    
+               Infection.K3 = Infection.K2;            
+               eee = i;
+           
+          %Set Easter Holiday according to LTLA
+          if LTLAEasterHoliday(schoolLTLA(eee)) == 1
+             Infection.HolidayWeek = [10, 18:28, 32, 33];
+          else
+             Infection.HolidayWeek = [10, 18:28, 33, 34]; 
+          end
+
+          Infection.Inf_0 = initsLTLA(schoolLTLA(eee));
+
+          %adjust Ext according to school's urban or rural status
+          if urbanorrural(eee) == 2
+            Infection.Ext = lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));
+          else
+               Infection.Ext = infparams(5)*lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));      
+          end
+
+          Infection.HolidayExt = infparams(4);  
+          Underreporting = ones(1,Infection.Weeks*7);
+          Underreporting(30*7:end) = infparams(12);
+          Adherence.probtakelatflow = ((Underreporting.*numtestingnegforschool(eee,:)) + numtestingposforschool(eee,:))/numpopLTLA(eee);                
+          Infection.commext = communityprevforschool(eee,:);           
+          Prob_profiles.newvar = communitySgeneforschool(eee,:); 
+         school_pop = SchoolPopulationquicker(yeargroupsizes(eee), numyeargroups(eee), closecontactsizes(eee));
+         school_pop2 = SchoolPopulationquicker(yeargroupsizes(eee), numyeargroups(eee), closecontactsizesnewterm(eee));
+         
+         
+         history = Interactingyeargroupsmuchquicker(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, school_pop2); %do model run                  
+         [pos_PCRsday, peakcovabs, Pos_LFTs] = Modeloutputssupercondensed(history, Infection.Weeks); %model outputs          
+
+          %store outputs for each school
+            tests_t(i,:) = pos_PCRsday;
+            size_school(i) = yeargroupsizes(eee)*numyeargroups(eee);            
+            Peak_covid_absences(i) = max(peakcovabs);
+            poslft_t(i,:) = Pos_LFTs;         
+            Peak_covid_absences1(i) = max(peakcovabs(8:119));
+            Peak_covid_absences2(i) = max(peakcovabs(end-76:end));
+
+        end
+       
+        
+      %model outputs for fitting
+        
+       tests_model_t = sum(tests_t)/sum(size_school);      
+       tests_model_hist1 = histcounts(Peak_covid_absences1, [0:15 Inf]);
+       tests_model_hist2 = histcounts(Peak_covid_absences2, [0:8 Inf]);
+       
+       %adjust tests_model_hist1 and 2 if there are any 0 values
+       if any(~tests_model_hist1)
+            tests_model_hist1 = tests_model_hist1+1;
+       end
+       
+       if any(~tests_model_hist2)
+            tests_model_hist2 = tests_model_hist2+1;
+       end
+       
+       tests_model_hist1 = tests_model_hist1/sum(tests_model_hist1);
+       tests_model_hist2 = tests_model_hist2/sum(tests_model_hist2);
+       model_poslft = sum(poslft_t)/sum(size_school);        
+
+     num_3 = 3896599; %for secondary schools
+
+     tests_model_t2 = model_poslft;
+ 
+  %testing data in weeks rather than days
  for j = 1:(Infection.Weeks-1)
      tests_model_t_weeks(j) = sum(tests_model_t(1 +(j-1)*7: 7 + (j-1)*7));
      tests_model_t_weeks2(j) = sum(tests_model_t2(1 +(j-1)*7: 7 + (j-1)*7));
@@ -388,20 +484,28 @@ end
  
  
  
- 
+
+  %Log likelihood at optimum
  optllt = sum(data_t.*log(data_t/num_3) + (num_3 - data_t).*log(1 - (data_t/num_3)));
  optllt2 = sum(data_t2.*log(data_t2/num_3) + (num_3 - data_t2).*log(1 - (data_t2/num_3))); 
  optllhist = sum(data_hist.*log(data_hist/sum(data_hist)));
  optllhist2 = sum(data_hist2.*log(data_hist2/sum(data_hist2)));
  
- 
- %Log likelihood functions
- 
+  %Calculate Log likelihoods
  LL_t = sum(data_t.*log(tests_model_t_weeks) + (num_3 - data_t).*log(1 - tests_model_t_weeks)) - optllt;
  LL_t2 = (sum(data_t2.*log(tests_model_t_weeks2) + (num_3 - data_t2).*log(1 - tests_model_t_weeks2)) - optllt2);
  LL_hist1 = (sum(data_hist.*log(tests_model_hist1)) - (optllhist));% 
  LL_hist2 = (sum(data_hist2.*log(tests_model_hist2)) - (optllhist2));%
- LL = -1*(LL_t + LL_hist1 + LL_t2 + LL_hist2);
+
  
+ %Calculate - total Log likelihood
+ LL = -1*(LL_t + LL_hist1 + LL_t2 + LL_hist2);
+     
+     
+ end
 
 end
+
+ 
+ 
+
