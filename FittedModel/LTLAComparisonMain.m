@@ -1,5 +1,9 @@
 function LTLAComparisonMain
 
+%Function that produces the main results of the paper, simulating epidemics
+%in 2979 schools for 100 parameter sets. R_school, internal and external
+%infections, and absences are stored
+
 
 numtestingnegforschool = [];
 numtestingposforschool = [];
@@ -7,22 +11,16 @@ communityprevforschool = [];
 combinedschools = [];
 schoolLTLA = [];
 schoolregion = [];
-load('exampleworkspace2.mat');
+load('exampleworkspace.mat'); %an example workspace containing synthetic data
 
 
 
 
-tests_vec1region = zeros(8, 100, 266);
-poslft_vec1region = zeros(8, 100, 266);
+tests_vec1region = zeros(8, 100, 266); %store PCR data at a regional level
+poslft_vec1region = zeros(8, 100, 266); %LFT data at a regional level
+abs_vec1region= zeros(8,100,266); %store absences data at a regional level
 
-
-        
-
-        p_rewire = 0;
-        
-
-
-       %Probability Profiles
+%Probability Profiles
 PCR_test_sym = readtable('PCR_Curve_summary.csv');
 PCR_test_sym = table2array(PCR_test_sym(:, 2:4));
 PCR_test_asym = csvread('PCR_Curve_asym.csv');
@@ -31,17 +29,17 @@ lat_test_sym = table2array(lat_test_sym(:, 2:4));
 lat_test_asym = csvread('lat_Curve_asym.csv');    
 
 
-    Infectivity_since_infection = [0.0063 0.0563 0.1320 0.1798 0.1817 0.1521 0.1117 0.0746 0.0464 0.0272 0.0152 0.0082 0.0043 0.0022 0.0011 0.0005 0.0002 0.0001 0.0001 0.0000];
-    Infectivity_since_infection = Infectivity_since_infection'/sum(Infectivity_since_infection);
-    Infectivity_since_infection(15) = sum(Infectivity_since_infection(15:end)); Infectivity_since_infection = Infectivity_since_infection(1:15);
-  
-    
-    Symptom_onset =  [0.0055 0.0534 0.1307 0.1814 0.1847 0.1545 0.1129 0.0747 0.0458 0.0265 0.0146 0.0077 0.0039 0.0020 0.0010 0.0005 0.0002 0.0001 0 0];
-    Symptom_onset = Symptom_onset/sum(Symptom_onset);
-    Symptom_onset(15) = sum(Symptom_onset(15:end)); Symptom_onset = Symptom_onset(1:15);
+Infectivity_since_infection = [0.0063 0.0563 0.1320 0.1798 0.1817 0.1521 0.1117 0.0746 0.0464 0.0272 0.0152 0.0082 0.0043 0.0022 0.0011 0.0005 0.0002 0.0001 0.0001 0.0000];
+Infectivity_since_infection = Infectivity_since_infection'/sum(Infectivity_since_infection);
+Infectivity_since_infection(15) = sum(Infectivity_since_infection(15:end)); Infectivity_since_infection = Infectivity_since_infection(1:15);
 
 
- poolobj = gcp;    
+Symptom_onset =  [0.0055 0.0534 0.1307 0.1814 0.1847 0.1545 0.1129 0.0747 0.0458 0.0265 0.0146 0.0077 0.0039 0.0020 0.0010 0.0005 0.0002 0.0001 0 0];
+Symptom_onset = Symptom_onset/sum(Symptom_onset);
+Symptom_onset(15) = sum(Symptom_onset(15:end)); Symptom_onset = Symptom_onset(1:15);
+
+
+ %poolobj = gcp;    
  
  
  paramsin = params;
@@ -50,41 +48,43 @@ lat_test_asym = csvread('lat_Curve_asym.csv');
  LTLAEasterHolidayin = LTLAEasterHoliday;
  initsLTLAin = initsLTLA;
  urbanorruralin = urbanorrural;
- numpopLTLAin = numpopLTLA;
  
     tic
-  parfor j = 1:100
+  parfor j = 1:10
 
             j
 
-      infparams = paramsin(j,1:12);
-      
-      communitySgeneforschool = zeros(2979, 274);
-    
-   for i = 1:length(schoolLTLAin)
-    communitySgeneforschool(i,:) = 1*(1-Sigmoidfitin( 237:(489+21), schoolLTLAin(i))) + infparams(10)*Sigmoidfitin(237:(489+21), schoolLTLAin(i));  
-
-    
-
-    end
+      infparams = zeros(1,12);
+      infparams(1:7) = paramsin(j,1:7);
+      infparams(8) = 0;
+      infparams(9) = paramsin(j,8);
+      infparams(10) = paramsin(j,9);
+      infparams(11) = 0.9997;
+      infparams(12) = paramsin(j,10);
       
       
+      %Proportion of cases alpha variant for each school
+      communitySgeneforschool = zeros(2979, 274); 
+       for i = 1:length(schoolLTLAin)
+        communitySgeneforschool(i,:) = 1*(1-Sigmoidfitin( 237:(489+21), schoolLTLAin(i))) + infparams(10)*Sigmoidfitin(237:(489+21), schoolLTLAin(i));  
+        end
       
       
       
-     LTLAtests = zeros(1,317);
-     LTLAsize = zeros(1,317);
-     LTLALFTs = zeros(1,317);
-    
+      
+      
+     LTLAtests = zeros(1,317); %PCRs at LTLA level
+     LTLAsize = zeros(1,317); %Number of pupils LTLA
+     LTLALFTs = zeros(1,317); %LFTs at LTLA level
      
+     %Initial model structs
      Infection = [];
      Strategy = [];
      Adherence = [];
      Prob_profiles = [];
      Testing = [];
      
-
-    
+    %Probability profiles
     Prob_profiles.PCRsym = PCR_test_sym;
     Prob_profiles.PCRasym = PCR_test_asym;
     Prob_profiles.latsym = lat_test_sym;
@@ -93,23 +93,16 @@ lat_test_asym = csvread('lat_Curve_asym.csv');
     Prob_profiles.Symptom_onset = Symptom_onset;
 
      
-     
      size_school = zeros(1,2979);
      tests_t = zeros(2979, 266);
      LFTs_t =  zeros(2979, 266);
-     
      Absences_t = zeros(2979, 266);
      Peak_covid_absences1 = zeros(1,2979);
-     Peak_covid_absences2 = zeros(1,2979);
-     
-     
+     Peak_covid_absences2 = zeros(1,2979);    
      Prevs_t = zeros(2979, 266);
-     Isolated_Infs = zeros(2979, 266);
-     
+     Isolated_Infs = zeros(2979, 266);     
      Rinfs1 = zeros(2979,266);
      Rinfs2 = zeros(2979,266);
-     
-
     ExternalIncs = zeros(2979,266);
     InternalIncs = zeros(2979,266);
      
@@ -151,7 +144,6 @@ lat_test_asym = csvread('lat_Curve_asym.csv');
     Testing.sens_lat = 1; %parameter deciding which column of the LFT sensitivity profile to read.
     %(1) - baseline sensitivity, (2) - low sensitivity, (3) - high sensitivity 
     Testing.spec_PCR = 1; %specificity of PCR tests
-   %Testing.spec_lat = infparams(8);
     Testing.PCR_delay = 2; %delay on PCR tests
     
 
@@ -159,45 +151,44 @@ lat_test_asym = csvread('lat_Curve_asym.csv');
         for i = 1:2979
      
         
-       Infection.K = lognrnd(log(infparams(1)) - (infparams(9)^2/2), infparams(9));
+        Infection.K = lognrnd(log(infparams(1)) - (infparams(9)^2/2), infparams(9));
       
 
     
-    eee = i;
-   
+        eee = i;
 
-      %Set Easter Holidays
-      if LTLAEasterHolidayin(schoolLTLAin(eee)) == 1
-         Infection.HolidayWeek = [10, 18:28, 32, 33];
+
+          %Set Easter Holidays
+          if LTLAEasterHolidayin(schoolLTLAin(eee)) == 1
+             Infection.HolidayWeek = [10, 18:28, 32, 33];
+          else
+             Infection.HolidayWeek = [10, 18:28, 33, 34]; 
+          end
+  
+  
+    
+       Infection.Inf_0 = initsLTLAin(schoolLTLAin(eee));    
+       Infection.K2 = infparams(3)*Infection.K;   
+       Infection.K3 = Infection.K2;
+
+      if urbanorruralin(eee) == 2 %set Ext according to urban or rural status of school
+        Infection.Ext = lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));
+
       else
-         Infection.HolidayWeek = [10, 18:28, 33, 34]; 
+           Infection.Ext = infparams(5)*lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));      
       end
-  
-  
-    
-   Infection.Inf_0 = initsLTLAin(schoolLTLAin(eee));    
-   Infection.K2 = infparams(3)*Infection.K;   
-   Infection.K3 = Infection.K2;
-  
-  if urbanorruralin(eee) == 2
-    Infection.Ext = lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));
-
-  else
-       Infection.Ext = infparams(5)*lognrnd((log(infparams(2)) - (infparams(8)^2/2)), infparams(8));      
-  end
       
   
-  %Using positive LFT data
-  %{
-  Underreporting = ones(1,Infection.Weeks*7);
-  Underreporting(30*7:end) = infparams(12);
-  Adherence.probtakelatflow = ((Underreporting.*numtestingnegforschool(i,:)) + numtestingposforschool(i,:))/numpopLTLAin(i);
-  %}
-  
-  
-  %set uptake to be 36%
-  Adherence.probtakelatflow = zeros(1, Infection.Weeks*7);
-  Adherence.probtakelatflow(28*7:end) = 0.36*(2/7);
+      %Using positive LFT data
+      %{
+      Underreporting = ones(1,Infection.Weeks*7);
+      Underreporting(30*7:end) = infparams(12);
+      Adherence.probtakelatflow = ((Underreporting.*numtestingnegforschool(i,:)) + numtestingposforschool(i,:))/numpopLTLAin(i);
+      %}
+
+      %set uptake to be 36%
+      Adherence.probtakelatflow = zeros(1, Infection.Weeks*7);
+      Adherence.probtakelatflow(28*7:end) = 0.36*(2/7);
   
            
            Infection.commext = communityprevforschool(eee,:);
@@ -206,19 +197,17 @@ lat_test_asym = csvread('lat_Curve_asym.csv');
          % Prob_profiles.newvar = ones(1,(Infection.Weeks*7) +1); %If no
          % impact of new variant
            
-         
-
-            
-            [school_pop, ~] = SchoolPopulation(combinedschools(eee,3), combinedschools(eee,2), combinedschools(eee,4), p_rewire);
-            [school_pop2, ~] = SchoolPopulation(combinedschools(eee,3), combinedschools(eee,2), combinedschools(eee,8), p_rewire);  
-
+          
+         %school populations for both terms
+        [school_pop, ~] = SchoolPopulation(combinedschools(eee,3), combinedschools(eee,2), combinedschools(eee,4), 0);
+        [school_pop2, ~] = SchoolPopulation(combinedschools(eee,3), combinedschools(eee,2), combinedschools(eee,8), 0);  
 
          
-            
+            %Model runs
             history = Interactingyeargroupsextended(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, randi(1e6), school_pop2);
             %history = Interactingyeargroupsquicker(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, randi(1e6), school_pop2);
 
-           [pos_PCRsday, peakcovabs, Absences, Prev_true, Num_LFTs, Pos_LFTs, Pos_LFTsandPCRs, Inc] = Modeloutputscondensed(history, Infection.Weeks);           
+           [pos_PCRsday, peakcovabs, Absences, Prev_true, ~, Pos_LFTs, ~, ~] = Modeloutputscondensed(history, Infection.Weeks);           
 
             
            
@@ -257,7 +246,8 @@ lat_test_asym = csvread('lat_Curve_asym.csv');
                 
         for k = 2:8
             tests_vec1region(k,j,:) = sum(tests_t(schoolregion == k,:))/sum(size_school(schoolregion == k));
-            poslft_vec1region(k,j,:) = sum(LFTs_t(schoolregion ==k, :))/sum(size_school(schoolregion == k));         
+            poslft_vec1region(k,j,:) = sum(LFTs_t(schoolregion ==k, :))/sum(size_school(schoolregion == k));
+            abs_vec1region(k,j,:) =    sum(Absences_t(schoolregion == k,:))/sum(size_school(schoolregion == k));
         end
         
         Rinfs1_vec1(j,:) = sum(Rinfs1);
@@ -271,12 +261,7 @@ lat_test_asym = csvread('lat_Curve_asym.csv');
         LTLAtestsmatrix(j,:) = LTLAtests;
         LTLALFTsmatrix(j,:) = LTLALFTs;
         LTLAsizematrix(j,:) = LTLAsize;
-        
-        
-        
-
-              
-        
+               
   end
 
   
