@@ -1039,7 +1039,7 @@ history.gettingatest = history.gettingatest(:,:, 1:(Weeks*7));
 %}
 history.IsolatingthroughCovid = history.IsolatingthroughCovid(:,:,(1:Weeks*7));
 history.pos_test_day = history.pos_test_day(:,1:(Weeks*7));
-
+history.HolidayWeek = Infection.HolidayWeek;
 
 end
     
