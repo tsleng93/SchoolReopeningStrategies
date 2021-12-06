@@ -1,11 +1,14 @@
 function [school_pop, Phi] = SchoolPopulation(YearSize, YearGroups, NumCloseContacts, p_rewire)
 
-%function to create matrix structure of school contacts
-%In practice, much of the functionality built into this has not been used.
-%In particular, p_rewire has always been set to 0 for the analyses in the
-%paper.
+%This function makes the school population matrix of year groups for
+%the longer version of the code
 
-%For p_rewire > 0, this function may continue to run indefinitely
+%N.B. Currently all year groups are assumed to have the same close contact
+%structure, but could be adjusted so that this was not the case
+
+%N.B. p_rewire can be used to make non-exclusive close contact groups, this
+%is not used in the paper (i.e. we set p_rewire = 0)- for p_rewire > 0, the
+%model sometimes ends up in an infinite loop
 
 if nargin == 0
     YearSize = 200;
@@ -16,12 +19,10 @@ end
 
 
 
-%Number of groups within a year
-NumGroups = YearSize/NumCloseContacts;
+NumGroups = YearSize/NumCloseContacts; %number of close contact groups in each year group
 
 school_matrix = [];
 yeargroup_vec = [];
-
 
 for i = 1:YearGroups
     
@@ -50,8 +51,7 @@ end
     while ~isempty(r)
         
         X = x(r(1)); Y = y(r(1));
-        
-        
+                
         if M(X,Y) == 1 %if the link is still there      
         
             nX = 1; nY = 1;
@@ -60,9 +60,7 @@ end
             while length(unique([X Y nX nY]))<4  || M(X,nY) + M(nY,X) + M(nX,Y) + M(Y,nX) >0
                 r2 = randi(length(r) - 1) + 1;
                
-                nX = x(r(r2)); nY = y(r(r2));
-          
-     
+                nX = x(r(r2)); nY = y(r(r2));     
             end
             
             M(X,Y) = 0; %remove link
@@ -91,22 +89,18 @@ end
     end
     
     M = M + M';
-    
-   %%Uncomment to record clustering 
-    
-   %M2 = M*M;
    % Triples = sum(sum(M2)) - trace(M2);
    % Triangles = trace(M2*M);
    % Phi(i) = Triples/Triangles;
-   Phi(i) = 0;
+   Phi(i) = 0; %Phi not used so currently not calculates
     
-    school_matrix = blkdiag(school_matrix, M);
-    yeargroup_vec = [yeargroup_vec, i*ones(1,YearSize)];
+    school_matrix = blkdiag(school_matrix, M); %store school matrix
+    yeargroup_vec = [yeargroup_vec, i*ones(1,YearSize)]; %store which year group each individual is in
     
     
 end
 
-%Add each to school population structure
+%store information in school_pop struct
 school_pop.school_matrix = school_matrix;
 school_pop.yeargroup_vec = yeargroup_vec;
 school_pop.yearsize = YearSize;
