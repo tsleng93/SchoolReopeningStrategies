@@ -34,7 +34,7 @@ cidown = 0.025;
 
 
 %Figure 3
-figure;
+%figure;
 A = Rinfs2_vec1./Rinfs1_vec1;
 above = quantile((A), ciup);
 below = quantile(A, cidown);
