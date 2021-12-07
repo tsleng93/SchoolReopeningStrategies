@@ -52,7 +52,7 @@ Comparable analyses can be obtained by running the script 'LTLAComparisonMain.m'
  - to run the 'mass testing' strategy (i.e. twice weekly mass testing alone), set Strategy.masstesting = 2, Strategy.isolation = 0, Strategy.SCT = 0
  - to run the 'mass testing + serial contact testing' strategy, set Strategy.masstesting = 2, Strategy.isolation = 0, Strategy.SCT = 1
 
-LTLAComparisonMain.m should take ~4 hours to run, using a parallel pool of 10 workers.
+LTLAComparisonMain.m should take ~45 minutes to run, using a parallel pool of 10 workers.
 
 ## Model functions
 The function 'interactingyeargroupsextended.m' is the main function of the model, simulating the spread of infection in a secondary school from 31st August 2020 until the 23rd May 2021.
