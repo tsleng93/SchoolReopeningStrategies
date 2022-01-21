@@ -12,7 +12,7 @@ Corresponding author: Trystan Leng, email: trystan.leng@warwick.ac.uk
 Underlying code, functions and visualisations are written in matlab version 2019b.
 
 
-Also contained in this The underlying model and model fitting code used in the paper "Quantifying within-school SARS-CoV-2 transmission and the impact of lateral flow testing in secondary schools in England" by Trystan Leng*, Edward M. Hill, Alex Holmes, Emma Southall, Robin N. Thompson, Michael J. Tildesley, Matt J. Keeling, and Louise Dyson is contained in the subfolder 'FittedModel'. The read me file for this is included below, in the section 'ReadMe - Quantifying within-school SARS-CoV-2 transmission'.
+Also contained in this The underlying model and model fitting code used in the paper "Quantifying pupil-to-pupil SARS-CoV-2 transmission and the impact of lateral flow testing in English secondary schools" by Trystan Leng*, Edward M. Hill, Alex Holmes, Emma Southall, Robin N. Thompson, Michael J. Tildesley, Matt J. Keeling, and Louise Dyson is contained in the subfolder 'FittedModel'. The read me file for this is included below, in the section 'ReadMe - Quantifying within-school SARS-CoV-2 transmission'.
 
 # ReadMe -  Assessing the impact of secondary school reopening strategies 
 
