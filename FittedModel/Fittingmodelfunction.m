@@ -329,7 +329,7 @@ end
          school_pop = SchoolPopulationquicker(yeargroupsizes(eee), numyeargroups(eee), closecontactsizes(eee));
          school_pop2 = SchoolPopulationquicker(yeargroupsizes(eee), numyeargroups(eee), closecontactsizesnewterm(eee));
          
-         history = Interactingyeargroupsmuchquicker(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, school_pop2); %do model run                 
+         history = Interactingyeargroupsquicker(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, school_pop2); %do model run                 
          [pos_PCRsday, peakcovabs, Pos_LFTs] = Modeloutputssupercondensed(history, Infection.Weeks);  %obtain model outputs         
             
             %store outputs for each school
@@ -435,7 +435,7 @@ end
          school_pop2 = SchoolPopulationquicker(yeargroupsizes(eee), numyeargroups(eee), closecontactsizesnewterm(eee));
          
          
-         history = Interactingyeargroupsmuchquicker(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, school_pop2); %do model run                  
+         history = Interactingyeargroupsquicker(school_pop, Infection, Testing, Strategy, Adherence, Prob_profiles, school_pop2); %do model run                  
          [pos_PCRsday, peakcovabs, Pos_LFTs] = Modeloutputssupercondensed(history, Infection.Weeks); %model outputs          
 
           %store outputs for each school
