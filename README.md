@@ -31,7 +31,7 @@ To generate the underlying data and plots for the sensitivity analyses (Suppleme
 
 To generate the underlying data and plots for Supplementary Figure 5, users should run the code 'suppfigure_K.m'.
 
-# ReadMe - Quantifying within-school SARS-CoV-2 transmission 
+# ReadMe - Quantifying pupil-to-pupil SARS-CoV-2 transmission 
 
 The model code is written in Matlab, and has been tested on Matlab 2019a and Matlab 2021a. No non-standard hardware is required to run the model code. 
 
