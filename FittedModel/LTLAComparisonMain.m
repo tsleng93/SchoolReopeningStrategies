@@ -150,7 +150,7 @@ Symptom_onset(15) = sum(Symptom_onset(15:end)); Symptom_onset = Symptom_onset(1:
        %loop through schools       
         for i = 1:2979
      
-        
+        rng((j-1)*1e5 +i);  
         Infection.K = lognrnd(log(infparams(1)) - (infparams(9)^2/2), infparams(9));
       
 
