@@ -87,7 +87,7 @@ figure;
 A = InternalInc_vec1 + ExternalInc_vec1;
 % % of cases in schools over half-terms
 
-AA = sum(InternalInc_vec1(:, 1:54), 2)./sum(A(:, 1:54), 2);
+AA = sum(InternalInc_vec1(:, 1:55), 2)./sum(A(:, 1:55), 2);
 
 mean(AA)
 quantile(AA, ciup)
@@ -98,7 +98,7 @@ mean(AA)
 quantile(AA, ciup)
 quantile(AA, cidown)
 
-AA = sum(InternalInc_vec1(:, 191:265), 2)./sum(A(:, 191:265), 2);
+AA = sum(InternalInc_vec1(:, 191:266), 2)./sum(A(:, 191:266), 2);
 mean(AA)
 quantile(AA, ciup)
 quantile(AA, cidown)
