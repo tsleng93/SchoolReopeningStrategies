@@ -18,7 +18,9 @@ Also contained in this The underlying model and model fitting code used in the p
 
 
 ## Model functions
-The function 'interactingyeargroups.m' is the main function of the model, simulating the spread of infection in a secondary school over the course of a half term.
+The function 'interactingyeargroups.m' is the main function of the model, simulating the spread of infection in a secondary school over the course of a half term. 
+
+The function 'Interactingyeargroups_externalinfection.m' is a function used within the main function to simulate external infections to pupils.
 
 The functions 'Modeloutputs.m' and 'Moremodeloutputs.m' extract key quantities from the 'history' output of the schools model, such as prevalence, total infected over a half term, absences, and testing volume. The specific outputs are described in comments within the .m files.
 
@@ -27,9 +29,9 @@ To generate the underlying data and plots for Figures 1 and 2, users should run 
 
 To generate the plots for the PCR and LFT test probability profiles (Supplementary Figure S1), users should run the code 'test_probability_profiles.m'. Test probability profiles for symptomatic individuals were obtained directly from [Hellewell et al. (2020)](https://cmmid.github.io/topics/covid19/pcr-positivity-over-time.html). Test probability profiles for asymptomatic individuals were obtained by assuming that profiles were equal to that of symptomatic individuals until the peak of infection, but then decay more rapidly. 
 
-To generate the underlying data and plots for the sensitivity analyses (Supplementary Figures S2-S4), users should run the code 'sensitivity_analyses.m'
+To generate the underlying data and plots for the sensitivity analyses (Supplementary Figures S3-S6), users should run the code 'sensitivity_analyses.m'
 
-To generate the underlying data and plots for Supplementary Figure 5, users should run the code 'suppfigure_K.m'.
+To generate the underlying data and plots for Figure 3, and Supplementary Figures S7-S11) users should run the code 'additional_plots.m'.
 
 # ReadMe - Quantifying pupil-to-pupil SARS-CoV-2 transmission 
 
@@ -43,8 +45,6 @@ The main analyses in the paper require data not publicly available. However, we 
 2) We include sigmoidal fits of the relative frequency of B.1.1.7 variant for each LTLA, rather than the raw data regarding S-gene negatives
 3) Smoothed community PCR positive testing rates for each LTLA are provided, obtained using the Matlab function 'smooth' with the setting 'rloess, rather than the raw data obtained from Pillar 2 data.
 4) We assume 36% uptake LFT uptake across all LTLAs, rather than obtaining uptake levels from Pillar 2 data that vary through time and by LTLA.
-
-
 
 Comparable analyses can be obtained by running the script 'LTLAComparisonMain.m'.  Comparable figures to figures 2 and 3 (omitting data) can be obtained through running the script 'ExampleFigures.m'.  This runs the baseline strategy of twice weekly mass testing and the isolation of close contacts. Different school control strategies can be obtained by adjusting the 'Strategy' structure:
 
