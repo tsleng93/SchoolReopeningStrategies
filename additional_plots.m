@@ -1,8 +1,10 @@
-%This file generate Figures 3, S7-S10, %%To generate Figure S11 - change
-%the parameter determining frequency dependent transmission for Figure S10
+%This file generate Figure 3, and the figures contain in S2-S7 Texts
+%%To generate Figure B in S6 Text - change
+%the parameter determining frequency dependent transmission for Figure A in
+%Supporting Text S6
 
 
-clear
+%clear
 
 %Positive test profiles
     PCR_test_sym = readtable('PCR_Curve_summary.csv');
@@ -14,7 +16,7 @@ clear
     lat_test_asym = csvread('lat_Curve_asym.csv');
        
 
-runs = 10; %For quick run
+runs = 20; %For quick run
 %runs = 2000; %Number of simulations for paper
     %set baseline parameters
     rng(1);
@@ -38,20 +40,20 @@ runs = 10; %For quick run
 
     end
   
-%
 
 
-%% Figure 3 - Impact of Uptake/participation %%
+%% S7 Text Figure A -> impact of user error
 
-   tic
+
+  tic
 for j = 1:101
         
 j
         
-    isolationparams(:,3) = 0.01*(j-1);
+    isolationparams(:,3) = 1;
         
     testingbaselineparams = isolationparams;
-    %testingbaselineparams(:,3) = 0;
+    testingbaselineparams(:,3) = 0;
     
     testinglowparams = testingbaselineparams;
     testinglowparams(:,4) = 2;
@@ -77,33 +79,47 @@ j
         parfor i = 1:runs
             
             
+            if j == 1
+                        history = Interactingyeargroups(isolationparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+                       [~, ~, ~, ~, ~, Tot_Infected,Schooldays_missed , Infected_within_school, Infected_during_term, AsymsCaptured, AsymsTotal, Peak_infect, Tot_Isolating] =   Modeloutputs(history);
+                       Tot_Infected_1(i,j) = sum(Tot_Infected);
+                       AsymsCaptured_1(i,j) = sum(AsymsCaptured);
+                       AsymsTotal_1(i,j) = sum(AsymsTotal);
+                       Schooldays_missed_1(i,j) = sum(Schooldays_missed(:));
+            end
+            
             %baseline testing
-            
-            
-            
-            history = Interactingyeargroups(testingbaselineparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+            history = Interactingyeargroups(testingbaselineparams(i,:), PCR_test_sym, PCR_test_asym, (j-1)*0.01*lat_test_sym, (j-1)*0.01*lat_test_asym, i);
             [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
             Tot_Infected_2(i,j) = sum(Tot_Infected);
             Schooldays_missed_2(i,j) = sum(Schooldays_missed(:));
+            AsymsCaptured_2(i,j) = sum(AsymsCaptured);
+            AsymsTotal_2(i,j) = sum(AsymsTotal);
             
             %weekly mass testing 
-            history = Interactingyeargroups(biweeklyparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+            history = Interactingyeargroups(biweeklyparams(i,:), PCR_test_sym, PCR_test_asym, (j-1)*0.01*lat_test_sym, (j-1)*0.01*lat_test_asym, i);
             [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
             Tot_Infected_6(i,j) = sum(Tot_Infected);
             Schooldays_missed_6(i,j) = sum(Schooldays_missed(:));
+            AsymsCaptured_6(i,j) = sum(AsymsCaptured);
+            AsymsTotal_6(i,j) = sum(AsymsTotal);
             
             
             %weekly mass testing + SCT
-             history = Interactingyeargroups(biweeklyscparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+             history = Interactingyeargroups(biweeklyscparams(i,:), PCR_test_sym, PCR_test_asym, (j-1)*0.01*lat_test_sym, (j-1)*0.01*lat_test_asym, i);
             [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
             Tot_Infected_8(i,j) = sum(Tot_Infected);
             Schooldays_missed_8(i,j) = sum(Schooldays_missed(:));
+            AsymsCaptured_8(i,j) = sum(AsymsCaptured);
+            AsymsTotal_8(i,j) = sum(AsymsTotal);
             
             %biweekly mass testing + SCT
-            history = Interactingyeargroups(testisolparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+            history = Interactingyeargroups(testisolparams(i,:), PCR_test_sym, PCR_test_asym, (j-1)*0.01*lat_test_sym, (j-1)*0.01*lat_test_asym, i);
             [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
             Tot_Infected_9(i,j) = sum(Tot_Infected);
-            Schooldays_missed_9(i,j) = sum(Schooldays_missed(:)); 
+            Schooldays_missed_9(i,j) = sum(Schooldays_missed(:));
+            AsymsCaptured_9(i,j) = sum(AsymsCaptured);
+            AsymsTotal_9(i,j) = sum(AsymsTotal);
           
             %{
             history = Interactingyeargroups(notestingparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
@@ -119,22 +135,16 @@ end
 toc
     
 
-figure;
     for i = 1:101
     
-    Tot_Infected_5(:,i) = Tot_Infected_6(:,end);
-    Tot_Infected_1(:,i) = Tot_Infected_2(:,end);
+    Tot_Infected_5(:,i) = Tot_Infected_6(:,1);
+    Tot_Infected_1(:,i) = Tot_Infected_1(:,1);
     end
 
     
     xvals = 0:1:100;
     
-    Tot_Infected_5  = Tot_Infected_5(:,end:-1:1);
-    Tot_Infected_6  = Tot_Infected_6(:,end:-1:1);
-    Tot_Infected_8  = Tot_Infected_8(:,end:-1:1);
-    Tot_Infected_9  = Tot_Infected_9(:,end:-1:1);
-    Tot_Infected_2  = Tot_Infected_2(:,end:-1:1);
-    Tot_Infected_1  = Tot_Infected_1(:,end:-1:1);
+
     
     
      above =  quantile(100*Tot_Infected_1/1000, 0.75);
@@ -192,12 +202,249 @@ figure;
     
      xlim([0 100]);
      legend('isolating year groups', 'twice weekly mass tests + isolating year groups', 'serial contact testing', 'twice weekly mass tests + serial contact testing', 'twice weekly mass tests', 'no control');
-     xlabel('% pupils participating in lateral flow testing ');
+     xlabel('% of LFTs taken correctly');
      ylabel('Total infected by end of half term (%)');
+     box on;
      set(gca, 'fontsize', 14);
      ylim([5 25]);
      
- figure;
+     
+    %{ 
+    for i = 1:101
+    Schooldays_missed_5(:,i) = Schooldays_missed_6(:,1);
+    Schooldays_missed_1(:,i) = Schooldays_missed_1(:,1);
+    end
+    
+
+    
+    xvals = 0:1:100;
+    
+    
+         plot(xvals, mean(Schooldays_missed_1)/1000, 'linewidth', 1.5, 'color', [1.00, 0.41, 0.16]); hold on
+     above =  quantile(Schooldays_missed_1/1000, 0.75);
+     below =  quantile(Schooldays_missed_1/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [1.00, 0.41, 0.16];
+     
+          plot(xvals, mean(Schooldays_missed_9)/1000, 'linewidth', 1.5, 'color', [0.93, 0.69, 0.13]); hold on
+     above =  quantile(Schooldays_missed_9/1000, 0.75);
+     below =  quantile(Schooldays_missed_9/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.93, 0.69, 0.13];
+    
+               plot(xvals, mean(Schooldays_missed_2)/1000, 'linewidth', 1.5, 'color', [0.30, 0.75, 0.93]); hold on
+     above =  quantile(Schooldays_missed_2/1000, 0.75);
+     below =  quantile(Schooldays_missed_2/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.30, 0.75, 0.93];
+     
+          plot(xvals, mean(Schooldays_missed_8)/1000, 'linewidth', 1.5, 'color', [0.39, 0.83, 0.07]); hold on
+     above =  quantile(Schooldays_missed_8/1000, 0.75);
+     below =  quantile(Schooldays_missed_8/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.39, 0.83, 0.07];
+     
+
+
+     plot(xvals, mean(Schooldays_missed_6)/1000, 'linewidth', 1.5, 'color', [0.72, 0.27, 1.00]); hold on
+     above =  quantile(Schooldays_missed_6/1000, 0.75);
+     below =  quantile(Schooldays_missed_6/1000, 0.25);
+     p = patch( [xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.72, 0.27, 1.00];
+
+    
+
+     
+     plot(xvals, mean(Schooldays_missed_5)/1000, 'linewidth', 1.5, 'color', [0.65, 0.65, 0.65]); hold on
+     above =  quantile(Schooldays_missed_5/1000, 0.75);
+     below =  quantile(Schooldays_missed_5/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.65, 0.65, 0.65];
+     
+     
+     xlim([0 100]);
+     legend('isolating year groups', 'twice weekly mass tests + isolating year groups', 'serial contact testing', 'twice weekly mass tests + serial contact testing', 'twice weekly mass tests', 'no control');
+     xlabel('% of LFTs taken correctly');
+     ylabel('Mean school days missed per pupil');
+     set(gca, 'fontsize', 14);
+
+%}
+
+%}
+
+%% Figure 3 - Impact of Uptake/participation %%
+
+   tic
+for j = 1:101
+        
+j
+        
+    isolationparams(:,3) = 0.01*(j-1);
+        
+    testingbaselineparams = isolationparams;
+    %testingbaselineparams(:,3) = 0;
+    
+    testinglowparams = testingbaselineparams;
+    testinglowparams(:,4) = 2;
+    testinghighparams = testingbaselineparams;
+    testinghighparams(:,4) = 3;
+
+    
+    biweeklyparams = testingbaselineparams;
+    biweeklyparams(:,4) = 6;
+    
+    
+    
+    biweeklyscparams = testingbaselineparams;
+    biweeklyscparams(:,4) = 8;
+    
+        
+    notestingparams = testingbaselineparams;
+    notestingparams(:,4) = 4;
+
+    testisolparams = testingbaselineparams;
+    testisolparams(:,4) = 14;
+        
+        parfor i = 1:runs
+            
+            
+            %baseline testing
+            
+            
+            
+            history = Interactingyeargroups(testingbaselineparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+            [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
+            Tot_Infected_2(i,j) = sum(Tot_Infected);
+            Schooldays_missed_2(i,j) = sum(Schooldays_missed(:));
+            AsymsCaptured_2(i,j) = sum(AsymsCaptured);
+            AsymsTotal_2(i,j) = sum(AsymsTotal);
+            
+            %weekly mass testing 
+            history = Interactingyeargroups(biweeklyparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+            [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
+            Tot_Infected_6(i,j) = sum(Tot_Infected);
+            Schooldays_missed_6(i,j) = sum(Schooldays_missed(:));
+            AsymsCaptured_6(i,j) = sum(AsymsCaptured);
+            AsymsTotal_6(i,j) = sum(AsymsTotal);
+            
+            
+            %weekly mass testing + SCT
+             history = Interactingyeargroups(biweeklyscparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+            [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
+            Tot_Infected_8(i,j) = sum(Tot_Infected);
+            Schooldays_missed_8(i,j) = sum(Schooldays_missed(:));
+            AsymsCaptured_8(i,j) = sum(AsymsCaptured);
+            AsymsTotal_8(i,j) = sum(AsymsTotal);
+            
+            %biweekly mass testing + SCT
+            history = Interactingyeargroups(testisolparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+            [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
+            Tot_Infected_9(i,j) = sum(Tot_Infected);
+            Schooldays_missed_9(i,j) = sum(Schooldays_missed(:));
+            AsymsCaptured_9(i,j) = sum(AsymsCaptured);
+            AsymsTotal_9(i,j) = sum(AsymsTotal);
+          
+            %{
+            history = Interactingyeargroups(notestingparams(i,:), PCR_test_sym, PCR_test_asym, lat_test_sym, lat_test_asym, i);
+            [Prev_true, Prev_asym, Known_asym, pos_tests, Absences, Tot_Infected, Schooldays_missed, ~, ~, AsymsCaptured, AsymsTotal, ~, ~, Days_tested, PresymsCaptured, day_caught_vec] = Modeloutputs(history); 
+            Tot_Infected_5(i,j) = sum(Tot_Infected);
+            Schooldays_missed_5(i,j) = sum(Schooldays_missed(:)); 
+            %}
+            
+        end
+        
+end
+toc
+%}
+
+
+figure;
+
+
+    for i = 1:101
+    
+    Tot_Infected_5(:,i) = Tot_Infected_6(:,end);
+    Tot_Infected_1(:,i) = Tot_Infected_2(:,end);
+    end
+
+    
+    xvals = 0:1:100;
+    
+    
+    Tot_Infected_5  = Tot_Infected_5(:,end:-1:1);
+    Tot_Infected_6  = Tot_Infected_6(:,end:-1:1);
+    Tot_Infected_8  = Tot_Infected_8(:,end:-1:1);
+    Tot_Infected_9  = Tot_Infected_9(:,end:-1:1);
+    Tot_Infected_2  = Tot_Infected_2(:,end:-1:1);
+    Tot_Infected_1  = Tot_Infected_1(:,end:-1:1);
+    
+    
+    above =  quantile(100*Tot_Infected_1/1000, 0.75);
+   below =  quantile(100*Tot_Infected_1/1000, 0.25);
+   p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [1.00, 0.41, 0.16];
+    
+     above =  quantile(100*Tot_Infected_9/1000, 0.75);
+     below =  quantile(100*Tot_Infected_9/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.93, 0.69, 0.13];
+
+
+        
+     above =  quantile(100*Tot_Infected_2/1000, 0.75);
+     below =  quantile(100*Tot_Infected_2/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.30, 0.75, 0.93];
+     
+     
+
+
+
+     above =  quantile(100*Tot_Infected_8/1000, 0.75);
+     below =  quantile(100*Tot_Infected_8/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.39, 0.83, 0.07];
+    
+    
+     above =  quantile(100*Tot_Infected_6/1000, 0.75);
+     below =  quantile(100*Tot_Infected_6/1000, 0.25);
+     p = patch( [xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.72, 0.27, 1.00];
+    
+
+     
+
+    
+    
+     above =  quantile(100*Tot_Infected_5/1000, 0.75);
+     below =  quantile(100*Tot_Infected_5/1000, 0.25);
+     p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+     p.FaceColor = [0.65, 0.65, 0.65];
+     
+             
+                       plot(xvals, 100*mean(Tot_Infected_1)/1000, 'linewidth', 1.5, 'color', [1.00, 0.41, 0.16]); hold on
+                         plot(xvals, 100*mean(Tot_Infected_9)/1000, 'linewidth', 1.5, 'color', [0.93, 0.69, 0.13]); hold on
+
+             plot(xvals, 100*mean(Tot_Infected_2)/1000, 'linewidth', 1.5, 'color', [0.30, 0.75, 0.93]); hold on
+      plot(xvals, 100*mean(Tot_Infected_8)/1000, 'linewidth', 1.5, 'color', [0.39, 0.83, 0.07]); hold on
+            plot(xvals, 100*mean(Tot_Infected_6)/1000, 'linewidth', 1.5, 'color', [0.72, 0.27, 1.00]); hold on
+             plot(xvals, 100*mean(Tot_Infected_5)/1000, 'linewidth', 1.5, 'color', [0.65, 0.65, 0.65]); hold on
+
+    
+    
+     xlim([0 100]);
+     legend('isolating year groups', 'twice weekly mass tests + isolating year groups', 'serial contact testing', 'twice weekly mass tests + serial contact testing', 'twice weekly mass tests', 'no control');
+     xlabel('% pupils participating in lateral flow testing ');
+     ylabel('Total infected by end of half term (%)');
+     set(gca, 'fontsize', 12);
+     box on;
+     ylim([5 25]);
+     set(gcf,'Position',[300,300,600,400] );
+    % print -depsc2 -tiff -r300  example3.tif
+    
+
+     
+
  
      figure;
    
@@ -255,13 +502,57 @@ figure;
      legend('no control', 'twice weekly mass tests', 'serial contact testing', 'isolating year groups', 'twice weekly mass tests + serial contact testing', 'twice weekly mass tests + isolating year groups');
      xlabel('% pupils participating in lateral flow testing ');
      ylabel('Mean school days missed per pupil');
-     set(gca, 'fontsize', 14);
+         set(gcf,'Position',[300,300,600,400] );
+
+     set(gca, 'fontsize', 12);
 
 %}
      
-   
 
-%% Supplementary Figure S7 %% 
+figure;
+AsymsCaptured_9 = AsymsCaptured_9(:, end:-1:1,1);
+AsymsCaptured_8 = AsymsCaptured_8(:, end:-1:1,1);
+AsymsCaptured_6 = AsymsCaptured_6(:, end:-1:1,1);
+AsymsCaptured_2 = AsymsCaptured_2(:, end:-1:1,1);
+AsymsTotal_2 = AsymsTotal_2(:, end:-1:1,1);
+AsymsTotal_6 = AsymsTotal_6(:, end:-1:1,1);
+AsymsTotal_8 = AsymsTotal_8(:, end:-1:1,1);
+AsymsTotal_9 = AsymsTotal_9(:, end:-1:1,1);
+
+
+plot(xvals, 100*sum(AsymsCaptured_6)./sum(AsymsTotal_6), 'linewidth', 1.5, 'color', [0.72, 0.27, 1.00]); hold on
+above = quantile(100*(AsymsCaptured_6./AsymsTotal_6), 0.75);
+below = quantile(100*(AsymsCaptured_6./AsymsTotal_6), 0.25);
+p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+p.FaceColor = [0.72, 0.27, 1.00];
+
+plot(xvals, 100*sum(AsymsCaptured_2)./sum(AsymsTotal_2), 'linewidth', 1.5, 'color', [0.30, 0.75, 0.93]); hold on
+above = quantile(100*(AsymsCaptured_2./AsymsTotal_2), 0.75);
+below = quantile(100*(AsymsCaptured_2./AsymsTotal_2), 0.25);
+p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+p.FaceColor = [0.30, 0.75, 0.93];
+
+plot(xvals, 100*sum(AsymsCaptured_8)./sum(AsymsTotal_8), 'linewidth', 1.5, 'color', [0.39, 0.83, 0.07]); hold on
+above = quantile(100*(AsymsCaptured_8./AsymsTotal_8), 0.75);
+below = quantile(100*(AsymsCaptured_8./AsymsTotal_8), 0.25);
+p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+p.FaceColor = [0.39, 0.83, 0.07];
+
+plot(xvals, 100*sum(AsymsCaptured_9)./sum(AsymsTotal_9), 'linewidth', 1.5, 'color', [0.93, 0.69, 0.13]); hold on
+above = quantile(100*(AsymsCaptured_9./AsymsTotal_9), 0.75);
+below = quantile(100*(AsymsCaptured_9./AsymsTotal_9), 0.25);
+p = patch([xvals fliplr(xvals)], [below above(end:-1:1)], 'b', 'FaceAlpha',0.25, 'EdgeAlpha', 0, 'HandleVisibility', 'off'); hold on
+p.FaceColor = [0.93, 0.69, 0.13];
+
+ legend( 'twice weekly mass tests', 'serial contact testing', 'twice weekly mass tests + serial contact testing', 'twice weekly mass tests + isolating year groups');
+ xlabel('% pupils participating in lateral flow testing ');
+ ylabel('% of asymptomatic cases identified');
+ set(gcf,'Position',[300,300,600,400] );
+ set(gca, 'fontsize', 12);
+
+% print -depsc2 -tiff -r300 -painters example3.eps
+
+%% S3 Text Figure A %% 
 %Impact of infection on school days 
 
 clearvars -except runs PCR_test_sym PCR_test_asym lat_test_sym lat_test_asym 
@@ -385,8 +676,11 @@ ylim([0 40]);
 
 %}
 
+
 clearvars -except runs PCR_test_sym PCR_test_asym lat_test_sym lat_test_asym 
-%% Figure S8 - Impact of levels of immunity %%
+
+
+%% S4 Text Figure A - Impact of levels of immunity %%
   for i = 1:runs
 
         isolationparams(i,1) = 1 +4*rand;       
@@ -635,7 +929,8 @@ set(gca, 'fontsize', 14);
 
 %}
 
-%% Figure S9 Impact of K %%
+
+%% S5 Text Figure A - Impact of K%%
 clearvars -except runs PCR_test_sym PCR_test_asym lat_test_sym lat_test_asym 
   for i = 1:runs
 
@@ -881,9 +1176,9 @@ set(gca, 'fontsize', 14);
 
 clearvars -except runs PCR_test_sym PCR_test_asym lat_test_sym lat_test_asym 
 
-%% Figures S11 and S12 -Impact of cohort size
+%% S6 Text Figure A and B -Impact of cohort size
 
-%Currently set to density dependent transmission, for S12, change
+%Currently set to density dependent transmission, for Figure B, change
 %isolationparams(:,15)
   for i = 1:runs
 
@@ -1102,40 +1397,4 @@ end
        set(gcf, 'Position', [300, 300, 1000, 450]);
             set(gca, 'fontsize', 14);
 
-            %{
-figure;
-A = [(Num_lat_1/1000),   NaN*ones(runs,1), (Num_lat_9/1000), NaN*ones(runs,1), (Num_lat_2/1000), NaN*ones(runs,1), (Num_lat_8/1000), NaN*ones(runs,1), (Num_lat_6/1000), NaN*ones(runs,1), (Num_lat_5/1000)]';
-    plot(100, 100, '.', 'MarkerSize', 20, 'color', [0.9, 0.9, 0.9]); hold on
-    plot(100, 100, '.', 'MarkerSize', 20, 'color', [0.7, 0.7, 0.7]);
-    plot(100, 100, '.', 'MarkerSize', 20, 'color', [0.5, 0.5, 0.5]); hold on
-    plot(100, 100, '.', 'MarkerSize', 20, 'color', [0, 0, 0]);
 
-v = violinplot(A'); hold on
-
-
-xticks([2.5, 7.5, 12.5, 17.5, 22.5, 27.5]);
- xticklabels({'', 'mass testing + isol', 'serial contact testing', 'mass testing + SCT', 'mass testing', ''});
-
-for i = 1:size(A,1)
-   if mod(i,5) == 1
-           v(i).ViolinColor = [0.9, 0.9, 0.9];
-   elseif mod(i,5) == 2
-       v(i).ViolinColor = [0.7, 0.7, 0.7];
-   elseif mod(i,5) == 3
-       v(i).ViolinColor = [0.5, 0.5, 0.5];
-   elseif mod(i,5) == 4
-       v(i).ViolinColor = [0, 0, 0];
-   end
-end
-
-xlim([0 30]);
-
-xlabel('Reopening strategy');
-ylabel('Mean number of LFTs per pupil');
-legend('Group size 25', 'Group size 50', 'Group size 100', 'Group size 200');
-ylim([0 35]);
-set(gcf, 'Position', [300, 300, 1000, 450]);
-set(gca, 'fontsize', 14);
-
-
-%}
